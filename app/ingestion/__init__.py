@@ -9,6 +9,10 @@ from app.ingestion.pdf_loader import (
     InvalidPDFError,
     ScannedOrEmptyPDFError,
 )
+from app.ingestion.chunker import (
+    DocumentChunk,
+    TextChunker,
+)
 
 __all__ = [
     "DocumentPage",
@@ -18,4 +22,6 @@ __all__ = [
     "PDFNotFoundError",
     "InvalidPDFError",
     "ScannedOrEmptyPDFError",
+    "DocumentChunk",
+    "TextChunker",
 ]
