@@ -9,7 +9,17 @@ from pathlib import Path
 
 if __name__ == "__main__":
     app_path = Path(__file__).resolve().parent / "app" / "main.py"
-    cmd = [sys.executable, "-m", "streamlit", "run", str(app_path)]
+    cmd = [
+        sys.executable,
+        "-m",
+        "streamlit",
+        "run",
+        str(app_path),
+        "--server.headless",
+        "true",
+        "--server.fileWatcherType",
+        "none",
+    ]
     try:
         subprocess.run(cmd, check=True)
     except KeyboardInterrupt:
