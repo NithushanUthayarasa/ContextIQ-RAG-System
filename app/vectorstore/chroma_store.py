@@ -163,6 +163,40 @@ class ChromaVectorStore:
             kwargs["where"] = where
         return self.collection.get(**kwargs)
 
+    def query(
+        self,
+        query_embedding: List[float],
+        top_k: int = 5,
+        where: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Queries the vector store for the nearest chunks using cosine distance.
+
+        Args:
+            query_embedding: Dense float vector of the query.
+            top_k: Number of nearest chunks to retrieve.
+            where: Optional metadata filter.
+
+        Returns:
+            ChromaDB query response dictionary containing ids, documents, metadatas, distances.
+        """
+        if self.count() == 0:
+            return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+
+        actual_k = min(top_k, self.count())
+        kwargs: Dict[str, Any] = {
+            "query_embeddings": [query_embedding],
+            "n_results": actual_k,
+            "include": ["documents", "metadatas", "distances"],
+        }
+        if where is not None:
+            kwargs["where"] = where
+
+        try:
+            return self.collection.query(**kwargs)
+        except Exception as e:
+            raise VectorStoreError(f"ChromaDB similarity query failed: {str(e)}") from e
+
     def delete_by_source(self, source: str) -> None:
         """Deletes all chunks associated with a specific document source filename."""
         self.collection.delete(where={"source": source})
