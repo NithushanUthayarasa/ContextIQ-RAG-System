@@ -13,6 +13,12 @@ from app.ingestion.chunker import (
     DocumentChunk,
     TextChunker,
 )
+from app.ingestion.embedder import (
+    GeminiEmbedder,
+    GeminiEmbedderError,
+    MissingAPIKeyError,
+    EmptyInputError,
+)
 
 __all__ = [
     "DocumentPage",
@@ -24,4 +30,8 @@ __all__ = [
     "ScannedOrEmptyPDFError",
     "DocumentChunk",
     "TextChunker",
+    "GeminiEmbedder",
+    "GeminiEmbedderError",
+    "MissingAPIKeyError",
+    "EmptyInputError",
 ]
