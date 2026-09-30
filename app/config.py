@@ -31,6 +31,7 @@ DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", 5))
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
 CHROMA_PERSIST_DIR = BASE_DIR / "chroma_db"
+CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "contextiq_documents")
 
 # Ensure runtime directories exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
