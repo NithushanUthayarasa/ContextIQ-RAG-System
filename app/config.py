@@ -20,7 +20,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Model Configurations
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "gemini-embedding-001")
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", 768))
-GENERATION_MODEL_NAME = os.getenv("GENERATION_MODEL_NAME", "gemini-2.5-flash")
+GENERATION_MODEL_NAME = os.getenv("GENERATION_MODEL_NAME", "gemini-3.5-flash")
+MAX_CONTEXT_CHARACTERS = int(os.getenv("MAX_CONTEXT_CHARACTERS", 12000))
 
 # RAG Hyperparameters
 DEFAULT_CHUNK_SIZE = int(os.getenv("DEFAULT_CHUNK_SIZE", 1000))
