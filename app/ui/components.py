@@ -63,20 +63,72 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
 
         st.divider()
 
-        st.markdown("### 📊 Indexed Document")
+        st.markdown("### 📚 Indexed Documents")
         total_chunks = vector_store.count() if vector_store else 0
-        current_doc = st.session_state.get("current_document", "None")
-        total_pages = st.session_state.get("current_pages", 0)
+        indexed_docs = vector_store.list_indexed_documents() if vector_store else []
 
-        st.markdown(f"**File:** `{current_doc}`")
-        st.markdown(f"**Pages:** `{total_pages}`")
-        st.markdown(f"**Total Chunks in DB:** `{total_chunks}`")
+        if not indexed_docs:
+            st.caption("No documents indexed yet.")
+        else:
+            st.caption(f"**{len(indexed_docs)}** document(s) • **{total_chunks}** total chunks")
+            deleting_id = st.session_state.get("deleting_doc_id")
+
+            for doc in indexed_docs:
+                doc_id = doc["document_id"]
+                source_name = doc["source"]
+                pages = doc["page_count"]
+                chunks = doc["chunk_count"]
+                is_legacy = doc_id.startswith("legacy_")
+
+                st.markdown(f"📄 **{source_name}**")
+                st.caption(f"{pages} page(s) • {chunks} chunk(s)")
+
+                if is_legacy:
+                    st.caption("*(Legacy V1 record)*")
+                else:
+                    if deleting_id == doc_id:
+                        st.warning(f"Delete `{source_name}`?")
+                        col_confirm, col_cancel = st.columns(2)
+                        with col_confirm:
+                            if st.button(
+                                "Confirm",
+                                key=f"confirm_{doc_id}",
+                                type="primary",
+                                use_container_width=True,
+                            ):
+                                vector_store.delete_by_document_id(doc_id)
+                                st.session_state["deleting_doc_id"] = None
+                                st.session_state["last_response"] = None
+                                st.success(f"Removed `{source_name}`.")
+                                st.rerun()
+                        with col_cancel:
+                            if st.button(
+                                "Cancel",
+                                key=f"cancel_{doc_id}",
+                                use_container_width=True,
+                            ):
+                                st.session_state["deleting_doc_id"] = None
+                                st.rerun()
+                    else:
+                        if st.button(
+                            "🗑️ Delete",
+                            key=f"del_{doc_id}",
+                            use_container_width=True,
+                        ):
+                            st.session_state["deleting_doc_id"] = doc_id
+                            st.rerun()
+
+                st.markdown(
+                    "<hr style='margin: 8px 0; border: none; border-top: 1px dashed #334155;' />",
+                    unsafe_allow_html=True,
+                )
 
         if total_chunks > 0:
-            if st.button("🗑️ Clear Vector Database", use_container_width=True):
+            if st.button("🗑️ Clear Vector Database", key="clear_all_db_btn", use_container_width=True):
                 vector_store.reset()
                 st.session_state["current_document"] = None
                 st.session_state["current_pages"] = 0
+                st.session_state["deleting_doc_id"] = None
                 st.session_state["last_response"] = None
                 st.success("Vector database cleared.")
                 st.rerun()

@@ -141,9 +141,6 @@ def main():
         st.error(f"Failed to initialize vector database: {str(e)}")
         vector_store = None
 
-    # Render Sidebar with System Metrics and Hyperparameters
-    config = render_sidebar(vector_store)
-
     # Maintain Session State defaults
     if "current_document" not in st.session_state:
         st.session_state["current_document"] = None
@@ -151,6 +148,11 @@ def main():
         st.session_state["current_pages"] = 0
     if "last_response" not in st.session_state:
         st.session_state["last_response"] = None
+    if "deleting_doc_id" not in st.session_state:
+        st.session_state["deleting_doc_id"] = None
+
+    # Render Sidebar with System Metrics and Hyperparameters
+    config = render_sidebar(vector_store)
 
     # ==========================================
     # SECTION 1: Document Upload & Indexing
