@@ -36,6 +36,10 @@ class ChatMessage:
     similarity_threshold: Optional[float] = None
     document_ids: Optional[List[str]] = None
     retrieval_mode: Optional[str] = None
+    reranking_enabled: bool = False
+    candidates_retrieved: Optional[int] = None
+    query_expansion_enabled: bool = False
+    expanded_queries: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -69,6 +73,10 @@ class Conversation:
         similarity_threshold: Optional[float] = None,
         document_ids: Optional[List[str]] = None,
         retrieval_mode: Optional[str] = None,
+        reranking_enabled: bool = False,
+        candidates_retrieved: Optional[int] = None,
+        query_expansion_enabled: bool = False,
+        expanded_queries: Optional[List[str]] = None,
     ) -> ChatMessage:
         """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
         msg = ChatMessage(
@@ -80,6 +88,10 @@ class Conversation:
             similarity_threshold=similarity_threshold,
             document_ids=document_ids,
             retrieval_mode=retrieval_mode,
+            reranking_enabled=reranking_enabled,
+            candidates_retrieved=candidates_retrieved,
+            query_expansion_enabled=query_expansion_enabled,
+            expanded_queries=list(expanded_queries) if expanded_queries else [],
         )
         self.messages.append(msg)
         return msg

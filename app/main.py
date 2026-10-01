@@ -14,6 +14,9 @@ from app.config import (
     DEFAULT_MIN_SIMILARITY,
     DEFAULT_RETRIEVAL_MODE,
     DEFAULT_TOP_K,
+    QUERY_EXPANSION_ENABLED,
+    RERANKER_ENABLED,
+    RERANKER_CANDIDATE_MULTIPLIER,
     UPLOAD_DIR,
     is_api_key_configured,
 )
@@ -30,6 +33,8 @@ from app.rag.conversation import Conversation
 from app.rag.pipeline import RAGPipeline, RAGPipelineError
 from app.rag.query_rewriter import QueryRewriter
 from app.retrieval.retriever import Retriever, RetrieverError
+from app.retrieval.reranker import TFIDFReranker
+from app.rag.query_expander import GeminiQueryExpander
 from app.ui.components import (
     apply_custom_styles,
     render_header,
@@ -142,6 +147,10 @@ def handle_chat_turn(
         similarity_threshold=response.similarity_threshold,
         document_ids=response.document_ids,
         retrieval_mode=response.retrieval_mode,
+        reranking_enabled=getattr(response, "reranking_enabled", False),
+        candidates_retrieved=getattr(response, "candidates_retrieved", None),
+        query_expansion_enabled=getattr(response, "query_expansion_enabled", False),
+        expanded_queries=getattr(response, "expanded_queries", []),
     )
     return response
 
@@ -209,6 +218,10 @@ def main():
         st.session_state["min_similarity"] = DEFAULT_MIN_SIMILARITY
     if "retrieval_mode" not in st.session_state:
         st.session_state["retrieval_mode"] = DEFAULT_RETRIEVAL_MODE
+    if "reranker_enabled" not in st.session_state:
+        st.session_state["reranker_enabled"] = RERANKER_ENABLED
+    if "query_expansion_enabled" not in st.session_state:
+        st.session_state["query_expansion_enabled"] = QUERY_EXPANSION_ENABLED
 
     # Render Sidebar with System Metrics and Hyperparameters
     config = render_sidebar(vector_store)
@@ -348,6 +361,10 @@ def main():
                             similarity_threshold=getattr(msg, "similarity_threshold", None),
                             document_ids=getattr(msg, "document_ids", None),
                             retrieval_mode=getattr(msg, "retrieval_mode", None),
+                            reranking_enabled=getattr(msg, "reranking_enabled", False),
+                            candidates_retrieved=getattr(msg, "candidates_retrieved", None),
+                            query_expansion_enabled=getattr(msg, "query_expansion_enabled", False),
+                            expanded_queries=getattr(msg, "expanded_queries", []),
                         )
 
     # 2. Chat Input Interaction
@@ -377,10 +394,15 @@ def main():
                         default_min_similarity=config["min_similarity"],
                         default_retrieval_mode=config.get("retrieval_mode", DEFAULT_RETRIEVAL_MODE),
                     )
+                    reranker = TFIDFReranker() if config.get("reranker_enabled") else None
+                    query_expander = GeminiQueryExpander() if config.get("query_expansion_enabled") else None
                     pipeline = RAGPipeline(
                         retriever=retriever,
                         generator=generator,
                         query_rewriter=rewriter,
+                        reranker=reranker,
+                        reranker_candidate_multiplier=RERANKER_CANDIDATE_MULTIPLIER,
+                        query_expander=query_expander,
                     )
                     response = handle_chat_turn(
                         query=user_query,
@@ -406,6 +428,10 @@ def main():
                         similarity_threshold=response.similarity_threshold,
                         document_ids=response.document_ids,
                         retrieval_mode=response.retrieval_mode,
+                        reranking_enabled=getattr(response, "reranking_enabled", False),
+                        candidates_retrieved=getattr(response, "candidates_retrieved", None),
+                        query_expansion_enabled=getattr(response, "query_expansion_enabled", False),
+                        expanded_queries=getattr(response, "expanded_queries", []),
                     )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:

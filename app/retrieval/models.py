@@ -38,6 +38,9 @@ class RetrievalResult:
     bm25_rank: Optional[int] = None
     rrf_score: Optional[float] = None
     retrieval_method: Optional[str] = None
+    # Reranking metadata — populated by a Reranker; never set by the Retriever.
+    rerank_score: Optional[float] = None
+    original_rank: Optional[int] = None
 
     @property
     def cosine_similarity(self) -> Optional[float]:

@@ -243,6 +243,29 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         )
         st.session_state["retrieval_mode"] = retrieval_mode
 
+        # Reranker Toggle
+        reranker_enabled = st.toggle(
+            "⚡ Enable Reranking",
+            value=st.session_state.get("reranker_enabled", False),
+            help=(
+                "When enabled, the retriever fetches a larger candidate pool "
+                "which is then reranked by TF-IDF term relevance before generation. "
+                "A cross-encoder reranker can be plugged in later."
+            ),
+        )
+        st.session_state["reranker_enabled"] = reranker_enabled
+
+        # Query Expansion Toggle
+        query_expansion_enabled = st.toggle(
+            "⚡ Enable Query Expansion",
+            value=st.session_state.get("query_expansion_enabled", False),
+            help=(
+                "When enabled, the system generates alternative search queries "
+                "to broaden retrieval before ranking. Uses Gemini LLM."
+            ),
+        )
+        st.session_state["query_expansion_enabled"] = query_expansion_enabled
+
         st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
         st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
 
@@ -253,6 +276,8 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         "min_similarity": min_similarity,
         "document_ids": selected_doc_ids,
         "retrieval_mode": retrieval_mode,
+        "reranker_enabled": reranker_enabled,
+        "query_expansion_enabled": query_expansion_enabled,
     }
 
 
@@ -272,6 +297,10 @@ def render_retrieved_context(
     similarity_threshold: Optional[float] = None,
     document_ids: Optional[List[str]] = None,
     retrieval_mode: Optional[str] = None,
+    reranking_enabled: bool = False,
+    candidates_retrieved: Optional[int] = None,
+    query_expansion_enabled: bool = False,
+    expanded_queries: Optional[List[str]] = None,
 ):
     """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
@@ -282,6 +311,24 @@ def render_retrieved_context(
             st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
         if retrieval_mode:
             st.caption(f"**Retrieval Strategy:** `{retrieval_mode.upper()}`")
+
+        # Query Expansion transparency
+        if query_expansion_enabled:
+            num_q = len(expanded_queries) if expanded_queries else 1
+            st.caption(f"**Query Expansion:** Enabled ({num_q} queries generated)")
+            if expanded_queries and len(expanded_queries) > 1:
+                for idx, q in enumerate(expanded_queries, start=1):
+                    st.caption(f"&nbsp;&nbsp;{idx}. `{q}`")
+        else:
+            st.caption("**Query Expansion:** Disabled")
+
+        # Reranking transparency
+        if reranking_enabled:
+            cand_note = f" | Candidates Retrieved: {candidates_retrieved}" if candidates_retrieved is not None else ""
+            st.caption(f"**Reranking:** Enabled (TF-IDF baseline){cand_note} | **Final Chunks:** {len(retrieved_chunks)}")
+        else:
+            st.caption("**Reranking:** Disabled")
+
         if document_ids:
             st.caption(f"**Search Scope:** Filtered to {len(document_ids)} selected document(s)")
         else:
@@ -309,6 +356,10 @@ def render_retrieved_context(
                 metric_parts.append(f"<strong>BM25:</strong> {chunk.bm25_score:.3f}")
             if getattr(chunk, "rrf_score", None) is not None:
                 metric_parts.append(f"<strong>RRF:</strong> {chunk.rrf_score:.5f}")
+            if getattr(chunk, "rerank_score", None) is not None:
+                metric_parts.append(f"<strong>Rerank:</strong> {chunk.rerank_score:.4f}")
+            if getattr(chunk, "original_rank", None) is not None:
+                metric_parts.append(f"<strong>OrigRank:</strong> #{chunk.original_rank}")
 
             metrics_html = " | ".join(metric_parts) if metric_parts else "<span>No scores</span>"
 

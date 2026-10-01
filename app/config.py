@@ -39,6 +39,23 @@ DEFAULT_RETRIEVAL_MODE = os.getenv("DEFAULT_RETRIEVAL_MODE", "semantic")
 DEFAULT_RRF_K = int(os.getenv("DEFAULT_RRF_K", 60))
 DEFAULT_HYBRID_CANDIDATE_MULTIPLIER = int(os.getenv("DEFAULT_HYBRID_CANDIDATE_MULTIPLIER", 2))
 
+# Reranker Configuration
+# RERANKER_ENABLED: set to "true" / "1" in .env to enable reranking by default.
+# RERANKER_CANDIDATE_MULTIPLIER: candidate pool = top_k * multiplier before reranking.
+RERANKER_ENABLED = os.getenv("RERANKER_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+RERANKER_CANDIDATE_MULTIPLIER = int(os.getenv("RERANKER_CANDIDATE_MULTIPLIER", 3))
+
+# Query Expansion Configuration
+QUERY_EXPANSION_ENABLED = os.getenv("QUERY_EXPANSION_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+# Validate that QUERY_EXPANSION_MAX_QUERIES is a positive integer; raise error if invalid.
+try:
+    _qe_max = int(os.getenv("QUERY_EXPANSION_MAX_QUERIES", "3"))
+    if _qe_max < 1:
+        raise ValueError
+    QUERY_EXPANSION_MAX_QUERIES = _qe_max
+except Exception:
+    raise ValueError("QUERY_EXPANSION_MAX_QUERIES must be an integer >= 1")
+
 # Storage Directories
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
