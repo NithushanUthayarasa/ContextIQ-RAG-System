@@ -312,6 +312,40 @@ class ChromaVectorStore:
         result.sort(key=lambda d: (d["source"], d["document_id"]))
         return result
 
+    def get_all_chunks(self) -> List[Dict[str, Any]]:
+        """
+        Retrieves all chunks stored in the collection including chunk_id, text, and metadata.
+        Useful for building or synchronizing external indexes like BM25.
+
+        Returns:
+            List of dictionaries with keys:
+            - chunk_id: str
+            - text: str
+            - metadata: Dict[str, Any]
+        """
+        if self.count() == 0:
+            return []
+
+        try:
+            data = self.collection.get(include=["documents", "metadatas"])
+            ids = data.get("ids", [])
+            documents = data.get("documents", [])
+            metadatas = data.get("metadatas", [])
+
+            results: List[Dict[str, Any]] = []
+            for i, chunk_id in enumerate(ids):
+                text = documents[i] if i < len(documents) else ""
+                meta = metadatas[i] if i < len(metadatas) and metadatas[i] is not None else {}
+                results.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "text": text,
+                        "metadata": meta,
+                    }
+                )
+            return results
+        except Exception as e:
+            raise VectorStoreError(f"Failed to retrieve all chunks from ChromaDB: {str(e)}") from e
 
     def reset(self) -> None:
         """

@@ -10,6 +10,7 @@ from app.config import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_MIN_SIMILARITY,
+    DEFAULT_RETRIEVAL_MODE,
     DEFAULT_TOP_K,
     EMBEDDING_MODEL_NAME,
     GENERATION_MODEL_NAME,
@@ -224,6 +225,24 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
             else:
                 selected_doc_ids = None
 
+        # Retrieval Mode Selector
+        valid_modes = ["semantic", "hybrid", "bm25"]
+        current_mode = st.session_state.get("retrieval_mode", DEFAULT_RETRIEVAL_MODE)
+        mode_idx = valid_modes.index(current_mode) if current_mode in valid_modes else 0
+
+        retrieval_mode = st.selectbox(
+            "Retrieval Strategy",
+            options=valid_modes,
+            index=mode_idx,
+            format_func=lambda m: {
+                "semantic": "🧠 Semantic Search (Vector)",
+                "hybrid": "⚡ Hybrid Search (Vector + BM25)",
+                "bm25": "🔤 Keyword Search (BM25)",
+            }.get(m, m),
+            help="Choose retrieval strategy: Semantic (dense embeddings), BM25 (keyword matching), or Hybrid (Reciprocal Rank Fusion).",
+        )
+        st.session_state["retrieval_mode"] = retrieval_mode
+
         st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
         st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
 
@@ -233,6 +252,7 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         "top_k": top_k,
         "min_similarity": min_similarity,
         "document_ids": selected_doc_ids,
+        "retrieval_mode": retrieval_mode,
     }
 
 
@@ -251,6 +271,7 @@ def render_retrieved_context(
     retrieval_query: Optional[str] = None,
     similarity_threshold: Optional[float] = None,
     document_ids: Optional[List[str]] = None,
+    retrieval_mode: Optional[str] = None,
 ):
     """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
@@ -259,6 +280,8 @@ def render_retrieved_context(
     with st.expander("🔎 View Retrieved Context (Transparency & Debugging)", expanded=False):
         if retrieval_query:
             st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
+        if retrieval_mode:
+            st.caption(f"**Retrieval Strategy:** `{retrieval_mode.upper()}`")
         if document_ids:
             st.caption(f"**Search Scope:** Filtered to {len(document_ids)} selected document(s)")
         else:
@@ -266,8 +289,8 @@ def render_retrieved_context(
         if similarity_threshold is not None:
             st.caption(f"**Similarity Threshold Applied:** `{similarity_threshold:.2f}` (filtered chunks with similarity < threshold)")
         st.caption(
-            "Inspecting raw chunks retrieved from ChromaDB (ordered nearest first). "
-            "Lower cosine distance indicates closer match (Cosine Similarity = 1 - Distance)."
+            "Inspecting raw chunks retrieved from the index. "
+            "Scores reflect the active retrieval strategy (Cosine Distance/Similarity, BM25, and/or RRF)."
         )
         for idx, chunk in enumerate(retrieved_chunks, start=1):
             doc_badge = (
@@ -275,12 +298,26 @@ def render_retrieved_context(
                 if getattr(chunk, "document_id", None)
                 else ""
             )
+
+            metric_parts = []
+            if getattr(chunk, "retrieval_method", None):
+                metric_parts.append(f"<strong>Mode:</strong> {chunk.retrieval_method}")
+            if chunk.distance is not None and chunk.cosine_similarity is not None:
+                metric_parts.append(f"<strong>Dist:</strong> {chunk.distance:.4f}")
+                metric_parts.append(f"<strong>Sim:</strong> {chunk.cosine_similarity:.4f}")
+            if getattr(chunk, "bm25_score", None) is not None:
+                metric_parts.append(f"<strong>BM25:</strong> {chunk.bm25_score:.3f}")
+            if getattr(chunk, "rrf_score", None) is not None:
+                metric_parts.append(f"<strong>RRF:</strong> {chunk.rrf_score:.5f}")
+
+            metrics_html = " | ".join(metric_parts) if metric_parts else "<span>No scores</span>"
+
             st.markdown(
                 f"""
                 <div class="chunk-container">
                     <div class="chunk-meta">
                         <span><strong>Chunk #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Chunk {chunk.chunk_index}){doc_badge}</span>
-                        <span><strong>Distance:</strong> {chunk.distance:.4f} | <strong>Similarity:</strong> {chunk.cosine_similarity:.4f}</span>
+                        <span>{metrics_html}</span>
                     </div>
                     <div class="chunk-text">{chunk.text}</div>
                 </div>

@@ -25,6 +25,7 @@ class RAGResponse:
     retrieval_query: Optional[str] = None
     similarity_threshold: Optional[float] = None
     document_ids: Optional[List[str]] = None
+    retrieval_mode: Optional[str] = None
 
     def __post_init__(self):
         if self.retrieval_query is None:
@@ -33,7 +34,7 @@ class RAGResponse:
 
 class RAGPipeline:
     """
-    Coordinates semantic retrieval and LLM generation through dependency injection.
+    Coordinates semantic/hybrid retrieval and LLM generation through dependency injection.
     Decoupled from specific vector stores, generative models, and query rewriters.
     """
 
@@ -80,6 +81,7 @@ class RAGPipeline:
         conversation_messages: Optional[List[Any]] = None,
         similarity_threshold: Optional[float] = None,
         document_ids: Optional[List[str]] = None,
+        retrieval_mode: Optional[str] = None,
     ) -> RAGResponse:
         """
         Executes the end-to-end RAG pipeline for a user question.
@@ -90,6 +92,7 @@ class RAGPipeline:
             conversation_messages: Optional sequence of prior ChatMessage objects for query rewriting.
             similarity_threshold: Optional minimum cosine similarity threshold override.
             document_ids: Optional list of document_id strings to restrict retrieval scope.
+            retrieval_mode: Optional retrieval mode ("semantic", "bm25", "hybrid").
 
         Returns:
             RAGResponse containing generated answer, cited sources, retrieved chunks, and query.
@@ -119,12 +122,14 @@ class RAGPipeline:
         if not retrieval_query or not retrieval_query.strip():
             retrieval_query = cleaned_question
 
-        # Step 1: Semantic retrieval using standalone query with similarity threshold and document filtering
+        # Step 1: Retrieval using standalone query with similarity threshold, document filtering, and retrieval mode
         retrieve_kwargs: Dict[str, Any] = {"query": retrieval_query, "top_k": top_k}
         if similarity_threshold is not None:
             retrieve_kwargs["similarity_threshold"] = similarity_threshold
         if document_ids is not None:
             retrieve_kwargs["document_ids"] = document_ids
+        if retrieval_mode is not None:
+            retrieve_kwargs["retrieval_mode"] = retrieval_mode
 
         retrieved_chunks = self.retriever.retrieve(**retrieve_kwargs)
 
@@ -137,11 +142,16 @@ class RAGPipeline:
             retrieved_chunks=retrieved_chunks,
         )
 
-        # Determine effective threshold applied
+        # Determine effective threshold and mode applied
         effective_threshold = (
             similarity_threshold
             if similarity_threshold is not None
             else getattr(self.retriever, "default_min_similarity", None)
+        )
+        effective_mode = (
+            retrieval_mode
+            if retrieval_mode is not None
+            else getattr(self.retriever, "default_retrieval_mode", "semantic")
         )
 
         return RAGResponse(
@@ -152,4 +162,5 @@ class RAGPipeline:
             retrieval_query=retrieval_query,
             similarity_threshold=effective_threshold,
             document_ids=document_ids,
+            retrieval_mode=effective_mode,
         )

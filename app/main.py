@@ -5,13 +5,14 @@ Main Streamlit Application Entrypoint
 
 import hashlib
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import streamlit as st
 
 from app.config import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_MIN_SIMILARITY,
+    DEFAULT_RETRIEVAL_MODE,
     DEFAULT_TOP_K,
     UPLOAD_DIR,
     is_api_key_configured,
@@ -111,11 +112,12 @@ def handle_chat_turn(
     top_k: Optional[int] = None,
     similarity_threshold: Optional[float] = None,
     document_ids: Optional[List[str]] = None,
+    retrieval_mode: Optional[str] = None,
 ) -> RAGResponse:
     """
     Executes a single conversational RAG turn.
     Passes conversation history to RAGPipeline for context-aware query rewriting.
-    Records user and assistant messages with source/context/rewritten-query/document-filter metadata upon success.
+    Records user and assistant messages with source/context/rewritten-query/document-filter/mode metadata upon success.
     """
     cleaned_query = query.strip()
     history = conversation.get_messages() if conversation else []
@@ -127,6 +129,8 @@ def handle_chat_turn(
         ask_kwargs["similarity_threshold"] = similarity_threshold
     if document_ids is not None:
         ask_kwargs["document_ids"] = document_ids
+    if retrieval_mode is not None:
+        ask_kwargs["retrieval_mode"] = retrieval_mode
 
     response = pipeline.ask(cleaned_query, **ask_kwargs)
     conversation.add_user_message(cleaned_query)
@@ -137,6 +141,7 @@ def handle_chat_turn(
         retrieval_query=response.retrieval_query,
         similarity_threshold=response.similarity_threshold,
         document_ids=response.document_ids,
+        retrieval_mode=response.retrieval_mode,
     )
     return response
 
@@ -202,6 +207,8 @@ def main():
         st.session_state["conversation"] = Conversation()
     if "min_similarity" not in st.session_state:
         st.session_state["min_similarity"] = DEFAULT_MIN_SIMILARITY
+    if "retrieval_mode" not in st.session_state:
+        st.session_state["retrieval_mode"] = DEFAULT_RETRIEVAL_MODE
 
     # Render Sidebar with System Metrics and Hyperparameters
     config = render_sidebar(vector_store)
@@ -340,6 +347,7 @@ def main():
                             retrieval_query=msg.retrieval_query,
                             similarity_threshold=getattr(msg, "similarity_threshold", None),
                             document_ids=getattr(msg, "document_ids", None),
+                            retrieval_mode=getattr(msg, "retrieval_mode", None),
                         )
 
     # 2. Chat Input Interaction
@@ -367,6 +375,7 @@ def main():
                         vector_store=vector_store,
                         default_top_k=config["top_k"],
                         default_min_similarity=config["min_similarity"],
+                        default_retrieval_mode=config.get("retrieval_mode", DEFAULT_RETRIEVAL_MODE),
                     )
                     pipeline = RAGPipeline(
                         retriever=retriever,
@@ -380,6 +389,7 @@ def main():
                         top_k=config["top_k"],
                         similarity_threshold=config["min_similarity"],
                         document_ids=config.get("document_ids"),
+                        retrieval_mode=config.get("retrieval_mode"),
                     )
                     st.session_state["last_response"] = response
 
@@ -395,6 +405,7 @@ def main():
                         retrieval_query=response.retrieval_query,
                         similarity_threshold=response.similarity_threshold,
                         document_ids=response.document_ids,
+                        retrieval_mode=response.retrieval_mode,
                     )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
