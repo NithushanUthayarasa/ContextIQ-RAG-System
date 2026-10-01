@@ -29,6 +29,11 @@ DEFAULT_CHUNK_OVERLAP = int(os.getenv("DEFAULT_CHUNK_OVERLAP", 200))
 DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", 5))
 DEFAULT_MAX_REWRITE_HISTORY = int(os.getenv("DEFAULT_MAX_REWRITE_HISTORY", 6))
 
+# Minimum Cosine Similarity Threshold for Retrieval Filtering
+# Note: This is an initial baseline (0.50) and should be tuned using evaluation data.
+DEFAULT_MIN_SIMILARITY = float(os.getenv("DEFAULT_MIN_SIMILARITY", "0.50"))
+MIN_RETRIEVAL_SIMILARITY = DEFAULT_MIN_SIMILARITY
+
 # Storage Directories
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"

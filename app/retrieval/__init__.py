@@ -7,6 +7,7 @@ from app.retrieval.retriever import (
     RetrieverError,
     EmptyQueryError,
     InvalidTopKError,
+    InvalidSimilarityThresholdError,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "RetrieverError",
     "EmptyQueryError",
     "InvalidTopKError",
+    "InvalidSimilarityThresholdError",
 ]

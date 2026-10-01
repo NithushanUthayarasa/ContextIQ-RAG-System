@@ -169,7 +169,7 @@ def test_retrieval_ordering(tmp_path: Path):
     embedder.embed_query.return_value = v_query
 
     retriever = Retriever(embedder=embedder, vector_store=store)
-    results = retriever.retrieve("Unit vector query", top_k=3)
+    results = retriever.retrieve("Unit vector query", top_k=3, similarity_threshold=0.0)
 
     assert len(results) == 3
     # Nearest first: distance(c1) <= distance(c2) <= distance(c3)
@@ -202,7 +202,7 @@ def test_results_ordered_correctly_from_mocked_distances(mock_embedder):
         "distances": [[0.10, 0.30, 0.60]],
     }
     retriever = Retriever(embedder=mock_embedder, vector_store=fake_store)
-    results = retriever.retrieve("test ordering", top_k=3)
+    results = retriever.retrieve("test ordering", top_k=3, similarity_threshold=0.0)
 
     assert len(results) == 3
     assert [r.distance for r in results] == [0.10, 0.30, 0.60]

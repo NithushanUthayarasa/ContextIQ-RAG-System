@@ -23,6 +23,7 @@ class RAGResponse:
     retrieved_chunks: List[RetrievedChunk]
     query: str
     retrieval_query: Optional[str] = None
+    similarity_threshold: Optional[float] = None
 
     def __post_init__(self):
         if self.retrieval_query is None:
@@ -76,6 +77,7 @@ class RAGPipeline:
         question: str,
         top_k: Optional[int] = None,
         conversation_messages: Optional[List[Any]] = None,
+        similarity_threshold: Optional[float] = None,
     ) -> RAGResponse:
         """
         Executes the end-to-end RAG pipeline for a user question.
@@ -84,6 +86,7 @@ class RAGPipeline:
             question: The user query string.
             top_k: Number of relevant chunks to retrieve (optional override).
             conversation_messages: Optional sequence of prior ChatMessage objects for query rewriting.
+            similarity_threshold: Optional minimum cosine similarity threshold override.
 
         Returns:
             RAGResponse containing generated answer, cited sources, retrieved chunks, and query.
@@ -113,11 +116,12 @@ class RAGPipeline:
         if not retrieval_query or not retrieval_query.strip():
             retrieval_query = cleaned_question
 
-        # Step 1: Semantic retrieval using standalone query
-        retrieved_chunks = self.retriever.retrieve(
-            query=retrieval_query,
-            top_k=top_k,
-        )
+        # Step 1: Semantic retrieval using standalone query with similarity threshold filtering
+        retrieve_kwargs: Dict[str, Any] = {"query": retrieval_query, "top_k": top_k}
+        if similarity_threshold is not None:
+            retrieve_kwargs["similarity_threshold"] = similarity_threshold
+
+        retrieved_chunks = self.retriever.retrieve(**retrieve_kwargs)
 
         # Step 2: Source deduplication
         sources = self.extract_sources(retrieved_chunks)
@@ -128,10 +132,18 @@ class RAGPipeline:
             retrieved_chunks=retrieved_chunks,
         )
 
+        # Determine effective threshold applied
+        effective_threshold = (
+            similarity_threshold
+            if similarity_threshold is not None
+            else getattr(self.retriever, "default_min_similarity", None)
+        )
+
         return RAGResponse(
             answer=answer,
             sources=sources,
             retrieved_chunks=retrieved_chunks,
             query=cleaned_question,
             retrieval_query=retrieval_query,
+            similarity_threshold=effective_threshold,
         )

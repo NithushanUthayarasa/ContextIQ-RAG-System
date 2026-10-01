@@ -11,6 +11,7 @@ import streamlit as st
 from app.config import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
+    DEFAULT_MIN_SIMILARITY,
     DEFAULT_TOP_K,
     UPLOAD_DIR,
     is_api_key_configured,
@@ -108,6 +109,7 @@ def handle_chat_turn(
     pipeline: RAGPipeline,
     conversation: Conversation,
     top_k: Optional[int] = None,
+    similarity_threshold: Optional[float] = None,
 ) -> RAGResponse:
     """
     Executes a single conversational RAG turn.
@@ -116,17 +118,21 @@ def handle_chat_turn(
     """
     cleaned_query = query.strip()
     history = conversation.get_messages() if conversation else []
-    response = pipeline.ask(
-        cleaned_query,
-        top_k=top_k,
-        conversation_messages=history,
-    )
+    ask_kwargs: Dict[str, Any] = {
+        "top_k": top_k,
+        "conversation_messages": history,
+    }
+    if similarity_threshold is not None:
+        ask_kwargs["similarity_threshold"] = similarity_threshold
+
+    response = pipeline.ask(cleaned_query, **ask_kwargs)
     conversation.add_user_message(cleaned_query)
     conversation.add_assistant_message(
         content=response.answer,
         sources=response.sources,
         retrieved_chunks=response.retrieved_chunks,
         retrieval_query=response.retrieval_query,
+        similarity_threshold=response.similarity_threshold,
     )
     return response
 
@@ -190,6 +196,8 @@ def main():
         st.session_state["deleting_doc_id"] = None
     if "conversation" not in st.session_state:
         st.session_state["conversation"] = Conversation()
+    if "min_similarity" not in st.session_state:
+        st.session_state["min_similarity"] = DEFAULT_MIN_SIMILARITY
 
     # Render Sidebar with System Metrics and Hyperparameters
     config = render_sidebar(vector_store)
@@ -326,6 +334,7 @@ def main():
                         render_retrieved_context(
                             msg.retrieved_chunks,
                             retrieval_query=msg.retrieval_query,
+                            similarity_threshold=getattr(msg, "similarity_threshold", None),
                         )
 
     # 2. Chat Input Interaction
@@ -352,6 +361,7 @@ def main():
                         embedder=embedder,
                         vector_store=vector_store,
                         default_top_k=config["top_k"],
+                        default_min_similarity=config["min_similarity"],
                     )
                     pipeline = RAGPipeline(
                         retriever=retriever,
@@ -363,6 +373,7 @@ def main():
                         pipeline=pipeline,
                         conversation=conversation,
                         top_k=config["top_k"],
+                        similarity_threshold=config["min_similarity"],
                     )
                     st.session_state["last_response"] = response
 
@@ -376,6 +387,7 @@ def main():
                     render_retrieved_context(
                         response.retrieved_chunks,
                         retrieval_query=response.retrieval_query,
+                        similarity_threshold=response.similarity_threshold,
                     )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:

@@ -9,6 +9,7 @@ import streamlit as st
 from app.config import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
+    DEFAULT_MIN_SIMILARITY,
     DEFAULT_TOP_K,
     EMBEDDING_MODEL_NAME,
     GENERATION_MODEL_NAME,
@@ -176,6 +177,16 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         )
         st.session_state["top_k"] = top_k
 
+        min_similarity = st.slider(
+            "Minimum Similarity Threshold",
+            min_value=0.0,
+            max_value=1.0,
+            value=float(st.session_state.get("min_similarity", DEFAULT_MIN_SIMILARITY)),
+            step=0.05,
+            help="Minimum cosine similarity required to include chunks in context (0.0 = keep all, 1.0 = exact match).",
+        )
+        st.session_state["min_similarity"] = min_similarity
+
         st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
         st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
 
@@ -183,6 +194,7 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         "chunk_size": chunk_size,
         "chunk_overlap": chunk_overlap,
         "top_k": top_k,
+        "min_similarity": min_similarity,
     }
 
 
@@ -199,6 +211,7 @@ def render_sources(sources: List[Dict[str, Any]]):
 def render_retrieved_context(
     retrieved_chunks: List[RetrievedChunk],
     retrieval_query: Optional[str] = None,
+    similarity_threshold: Optional[float] = None,
 ):
     """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
@@ -207,6 +220,8 @@ def render_retrieved_context(
     with st.expander("🔎 View Retrieved Context (Transparency & Debugging)", expanded=False):
         if retrieval_query:
             st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
+        if similarity_threshold is not None:
+            st.caption(f"**Similarity Threshold Applied:** `{similarity_threshold:.2f}` (filtered chunks with similarity < threshold)")
         st.caption(
             "Inspecting raw chunks retrieved from ChromaDB (ordered nearest first). "
             "Lower cosine distance indicates closer match (Cosine Similarity = 1 - Distance)."

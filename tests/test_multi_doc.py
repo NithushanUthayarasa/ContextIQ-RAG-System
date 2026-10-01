@@ -276,7 +276,7 @@ def test_cross_document_retrieval(tmp_path: Path):
     embedder.embed_query.return_value = vec_a
 
     retriever = Retriever(embedder=embedder, vector_store=store)
-    results_a = retriever.retrieve("Tell me about self-attention", top_k=2)
+    results_a = retriever.retrieve("Tell me about self-attention", top_k=2, similarity_threshold=0.0)
 
     assert len(results_a) == 2
     # Nearest result should be Doc A
@@ -286,7 +286,7 @@ def test_cross_document_retrieval(tmp_path: Path):
 
     # Query 2 aligns with Document B
     embedder.embed_query.return_value = vec_b
-    results_b = retriever.retrieve("Explain retrieval augmented generation", top_k=2)
+    results_b = retriever.retrieve("Explain retrieval augmented generation", top_k=2, similarity_threshold=0.0)
 
     assert len(results_b) == 2
     # Nearest result should be Doc B
