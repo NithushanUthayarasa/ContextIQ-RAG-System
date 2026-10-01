@@ -4,7 +4,7 @@ Manages chat message models and conversation history state.
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, Dict, List, Optional
 
 
 class ConversationError(Exception):
@@ -27,9 +27,11 @@ ALLOWED_ROLES = {"user", "assistant"}
 
 @dataclass
 class ChatMessage:
-    """Represents a single chat message with role and text content."""
+    """Represents a single chat message with role, text content, and optional response metadata."""
     role: str
     content: str
+    sources: List[Dict[str, Any]] = field(default_factory=list)
+    retrieved_chunks: List[Any] = field(default_factory=list)
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -54,9 +56,19 @@ class Conversation:
         self.messages.append(msg)
         return msg
 
-    def add_assistant_message(self, content: str) -> ChatMessage:
-        """Appends a new assistant message to the conversation."""
-        msg = ChatMessage(role="assistant", content=content)
+    def add_assistant_message(
+        self,
+        content: str,
+        sources: Optional[List[Dict[str, Any]]] = None,
+        retrieved_chunks: Optional[List[Any]] = None,
+    ) -> ChatMessage:
+        """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
+        msg = ChatMessage(
+            role="assistant",
+            content=content,
+            sources=list(sources) if sources else [],
+            retrieved_chunks=list(retrieved_chunks) if retrieved_chunks else [],
+        )
         self.messages.append(msg)
         return msg
 

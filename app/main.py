@@ -5,7 +5,7 @@ Main Streamlit Application Entrypoint
 
 import hashlib
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import streamlit as st
 
 from app.config import (
@@ -100,6 +100,28 @@ def ingest_pdf_bytes(
         "total_pages": load_result.total_pages,
         "empty_pages": load_result.empty_pages,
     }
+
+
+def handle_chat_turn(
+    query: str,
+    pipeline: RAGPipeline,
+    conversation: Conversation,
+    top_k: Optional[int] = None,
+) -> RAGResponse:
+    """
+    Executes a single conversational RAG turn.
+    Passes literal user query directly to RAGPipeline.ask() without history modification.
+    Records user and assistant messages with source/context metadata upon success.
+    """
+    cleaned_query = query.strip()
+    response = pipeline.ask(cleaned_query, top_k=top_k)
+    conversation.add_user_message(cleaned_query)
+    conversation.add_assistant_message(
+        content=response.answer,
+        sources=response.sources,
+        retrieved_chunks=response.retrieved_chunks,
+    )
+    return response
 
 
 # --- Caching Long-Lived Core Services ---
@@ -255,26 +277,54 @@ def main():
     st.divider()
 
     # ==========================================
-    # SECTION 2: Grounded Q&A Interface
+    # SECTION 2: Conversational RAG Interface
     # ==========================================
-    st.markdown("### 💬 Ask Your Document")
+    st.markdown("### 💬 Chat with ContextIQ")
 
     indexed_count = vector_store.count() if vector_store else 0
-    active_doc = st.session_state.get("current_document")
+    conversation = st.session_state.get("conversation")
 
     if indexed_count == 0:
-        st.info("ℹ️ No documents indexed yet. Upload and index a PDF above to begin asking questions.")
+        st.info("ℹ️ No documents indexed yet. Upload and index PDF document(s) above to begin chatting.")
 
-    question = st.text_input(
-        "Enter your question:",
-        placeholder="e.g. What are the key findings of this document?",
+    # 1. Render Existing Conversation History
+    messages = conversation.get_messages() if conversation else []
+    if not messages:
+        if indexed_count > 0:
+            st.markdown(
+                """
+                <div style="text-align: center; padding: 2.5rem 1rem; color: #94A3B8; background: #0F172A; border-radius: 8px; border: 1px dashed #334155; margin-bottom: 1.5rem;">
+                    <h4 style="color: #F8FAFC; margin-bottom: 0.5rem;">💬 Start a conversation</h4>
+                    <p style="margin: 0; font-size: 0.95rem;">Ask a question about your indexed documents below.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        for msg in messages:
+            with st.chat_message(msg.role):
+                st.markdown(msg.content)
+                if msg.role == "assistant":
+                    if msg.sources:
+                        render_sources(msg.sources)
+                    if msg.retrieved_chunks:
+                        render_retrieved_context(msg.retrieved_chunks)
+
+    # 2. Chat Input Interaction
+    prompt = st.chat_input(
+        "Ask a question about your documents...",
         disabled=(indexed_count == 0),
     )
 
-    if st.button("🔍 Ask ContextIQ", type="primary", disabled=(indexed_count == 0)):
-        if not question or not question.strip():
-            st.warning("Please enter a question.")
-        else:
+    if prompt and prompt.strip():
+        user_query = prompt.strip()
+
+        # Render user message in current run
+        with st.chat_message("user"):
+            st.markdown(user_query)
+
+        # Generate and render assistant response
+        with st.chat_message("assistant"):
             try:
                 with st.spinner("Retrieving relevant context and generating grounded answer..."):
                     embedder = get_embedder()
@@ -285,40 +335,27 @@ def main():
                         default_top_k=config["top_k"],
                     )
                     pipeline = RAGPipeline(retriever=retriever, generator=generator)
-                    response = pipeline.ask(question.strip(), top_k=config["top_k"])
+                    response = handle_chat_turn(
+                        query=user_query,
+                        pipeline=pipeline,
+                        conversation=conversation,
+                        top_k=config["top_k"],
+                    )
                     st.session_state["last_response"] = response
 
-                    # Record successful exchange in conversation state
-                    if "conversation" in st.session_state and st.session_state["conversation"] is not None:
-                        st.session_state["conversation"].add_user_message(question.strip())
-                        st.session_state["conversation"].add_assistant_message(response.answer)
+                # Render assistant content
+                st.markdown(response.answer)
+
+                if response.sources:
+                    render_sources(response.sources)
+
+                if response.retrieved_chunks:
+                    render_retrieved_context(response.retrieved_chunks)
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
                 st.error(f"RAG Error: {str(e)}")
             except Exception as e:
                 st.error(f"Unexpected generation error: {str(e)}")
-
-    # ==========================================
-    # SECTION 3: Answer & Transparency Display
-    # ==========================================
-    last_resp = st.session_state.get("last_response")
-    if last_resp is not None:
-        st.markdown("---")
-        st.markdown("### 💡 Answer")
-        st.markdown(
-            f"""
-            <div style="background: #1E293B; border-left: 4px solid #38BDF8; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.2rem;">
-                <div style="font-size: 1.05rem; line-height: 1.6; color: #F1F5F9;">{last_resp.answer}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        # Sources
-        render_sources(last_resp.sources)
-
-        # Transparent retrieved context expander
-        render_retrieved_context(last_resp.retrieved_chunks)
 
 
 if __name__ == "__main__":
