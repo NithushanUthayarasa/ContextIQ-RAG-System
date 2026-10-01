@@ -3,7 +3,9 @@ ContextIQ - RAG-Powered Document Intelligence System
 Main Streamlit Application Entrypoint
 """
 
+import hashlib
 from pathlib import Path
+from typing import Any, Dict
 import streamlit as st
 
 from app.config import (
@@ -32,6 +34,71 @@ from app.ui.components import (
     render_sources,
 )
 from app.vectorstore.chroma_store import ChromaVectorStore, VectorStoreError
+
+
+# --- Ingestion Helper with Multi-Document Guarantees ---
+def ingest_pdf_bytes(
+    file_name: str,
+    file_bytes: bytes,
+    vector_store: ChromaVectorStore,
+    embedder: GeminiEmbedder,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+    upload_dir: Path = UPLOAD_DIR,
+) -> Dict[str, Any]:
+    """
+    Ingests raw PDF bytes with content-based SHA-256 identity, duplicate checking,
+    isolated staging, chunking, embedding, and storage in ChromaDB.
+
+    Returns:
+        Dict containing status ('indexed' or 'skipped'), document_id, chunks count, etc.
+    """
+    # 1. Compute complete SHA-256 document identity from file content
+    document_id = hashlib.sha256(file_bytes).hexdigest()
+
+    # 2. Duplicate detection BEFORE saving to disk or embedding
+    if vector_store.has_document(document_id):
+        return {
+            "status": "skipped",
+            "document_id": document_id,
+            "source": file_name,
+            "message": "Already indexed",
+            "chunks": 0,
+            "pages": 0,
+            "total_pages": 0,
+            "empty_pages": [],
+        }
+
+    # 3. Safe staging path using full document_id to avoid filename collisions
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    staging_path = upload_dir / f"{document_id}.pdf"
+    if not staging_path.exists():
+        with open(staging_path, "wb") as f:
+            f.write(file_bytes)
+
+    # 4. Extract text using PDFLoader preserving human-readable original filename as source
+    loader = PDFLoader(staging_path, source_name=file_name)
+    load_result = loader.load()
+
+    # 5. Chunk pages with document_id identity
+    chunker = TextChunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    chunks = chunker.split_pages(load_result.pages, document_id=document_id)
+
+    # 6. Generate Gemini embeddings for new chunks
+    embeddings = embedder.embed_documents(chunks)
+
+    # 7. Store in ChromaDB
+    vector_store.add_chunks(chunks, embeddings)
+
+    return {
+        "status": "indexed",
+        "document_id": document_id,
+        "source": file_name,
+        "chunks": len(chunks),
+        "pages": load_result.non_empty_page_count,
+        "total_pages": load_result.total_pages,
+        "empty_pages": load_result.empty_pages,
+    }
 
 
 # --- Caching Long-Lived Core Services ---
@@ -90,86 +157,95 @@ def main():
     # ==========================================
     st.markdown("### 📄 Document Ingestion")
 
-    uploaded_file = st.file_uploader(
-        "Upload a PDF document to index:",
+    uploaded_files = st.file_uploader(
+        "Upload PDF documents to index:",
         type=["pdf"],
+        accept_multiple_files=True,
         help="Upload standard text-based PDF documents (Scanned/OCR not supported in V1)",
     )
 
-    if uploaded_file is not None:
-        file_size_kb = uploaded_file.size / 1024
+    if uploaded_files:
+        total_size_kb = sum(f.size for f in uploaded_files) / 1024
         col_meta1, col_meta2 = st.columns([3, 1])
         with col_meta1:
-            st.caption(f"**Selected:** `{uploaded_file.name}` ({file_size_kb:.1f} KB)")
+            names_summary = ", ".join(f"`{f.name}`" for f in uploaded_files[:3])
+            if len(uploaded_files) > 3:
+                names_summary += f" + {len(uploaded_files) - 3} more"
+            st.caption(f"**Selected {len(uploaded_files)} file(s):** {names_summary} ({total_size_kb:.1f} KB)")
 
-        if st.button("🚀 Index Document", type="primary", use_container_width=True):
+        if st.button("🚀 Index Documents", type="primary", use_container_width=True):
             if not is_api_key_configured():
-                st.error("Cannot index document: GEMINI_API_KEY is not configured.")
+                st.error("Cannot index documents: GEMINI_API_KEY is not configured.")
                 return
 
-            # Save uploaded PDF to staging directory
-            save_path = UPLOAD_DIR / uploaded_file.name
-            with open(save_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
+            embedder = get_embedder()
+            summary_stats = {"indexed": 0, "skipped": 0, "failed": 0, "total_chunks": 0}
 
-            try:
-                with st.status("Indexing Document...", expanded=True) as status:
-                    # 1. PDF Text Extraction
-                    status.write("📖 Loading PDF and extracting text with PyMuPDF...")
-                    loader = PDFLoader(save_path)
-                    load_result = loader.load()
+            with st.status(f"Processing {len(uploaded_files)} Document(s)...", expanded=True) as status:
+                for idx, file in enumerate(uploaded_files, start=1):
+                    file_name = file.name
+                    file_bytes = bytes(file.getbuffer())
+                    status.write(f"**[{idx}/{len(uploaded_files)}]** Inspecting `{file_name}`...")
 
-                    if load_result.has_empty_pages:
-                        st.info(
-                            f"Note: Pages {load_result.empty_pages} contained no extractable text."
+                    try:
+                        res = ingest_pdf_bytes(
+                            file_name=file_name,
+                            file_bytes=file_bytes,
+                            vector_store=vector_store,
+                            embedder=embedder,
+                            chunk_size=config["chunk_size"],
+                            chunk_overlap=config["chunk_overlap"],
                         )
 
-                    status.write(
-                        f"✓ Extracted {load_result.non_empty_page_count} page(s) with text (Total {load_result.total_pages} pages)."
-                    )
+                        if res["status"] == "skipped":
+                            status.write(f"⏭️ `{file_name}` — Already indexed (skipped).")
+                            summary_stats["skipped"] += 1
+                        else:
+                            empty_note = (
+                                f" (Pages {res['empty_pages']} had no text)"
+                                if res.get("empty_pages")
+                                else ""
+                            )
+                            status.write(
+                                f"✅ `{file_name}` — Indexed {res['chunks']} chunks across {res['pages']} page(s){empty_note}."
+                            )
+                            summary_stats["indexed"] += 1
+                            summary_stats["total_chunks"] += res["chunks"]
+                            st.session_state["current_document"] = file_name
+                            st.session_state["current_pages"] = res["total_pages"]
 
-                    # 2. Text Chunking
-                    status.write("✂️ Segmenting text into overlapping chunks...")
-                    chunker = TextChunker(
-                        chunk_size=config["chunk_size"],
-                        chunk_overlap=config["chunk_overlap"],
-                    )
-                    chunks = chunker.split_pages(load_result.pages)
-                    status.write(
-                        f"✓ Created {len(chunks)} chunks (size: {config['chunk_size']}, overlap: {config['chunk_overlap']})."
-                    )
+                    except ScannedOrEmptyPDFError as e:
+                        status.write(f"❌ `{file_name}` — Scanned or image-only PDF: {str(e)}")
+                        summary_stats["failed"] += 1
+                    except (PDFLoaderError, InvalidPDFError) as e:
+                        status.write(f"❌ `{file_name}` — PDF processing error: {str(e)}")
+                        summary_stats["failed"] += 1
+                    except (GeminiEmbedderError, MissingAPIKeyError) as e:
+                        status.write(f"❌ `{file_name}` — Embedding API error: {str(e)}")
+                        summary_stats["failed"] += 1
+                    except VectorStoreError as e:
+                        status.write(f"❌ `{file_name}` — Vector store error: {str(e)}")
+                        summary_stats["failed"] += 1
+                    except Exception as e:
+                        status.write(f"❌ `{file_name}` — Unexpected error: {str(e)}")
+                        summary_stats["failed"] += 1
 
-                    # 3. Vector Embeddings
-                    status.write("🧠 Generating dense embeddings with Gemini...")
-                    embedder = get_embedder()
-                    embeddings = embedder.embed_documents(chunks)
-                    status.write(f"✓ Generated {len(embeddings)} vector embeddings.")
+                status.update(
+                    label=f"✓ Ingestion Finished: {summary_stats['indexed']} indexed, {summary_stats['skipped']} skipped, {summary_stats['failed']} failed.",
+                    state="complete",
+                    expanded=False,
+                )
 
-                    # 4. Storage in ChromaDB
-                    status.write("💾 Storing vectors and metadata in ChromaDB...")
-                    vector_store.add_chunks(chunks, embeddings)
-                    status.update(
-                        label="✓ Document Indexed Successfully!",
-                        state="complete",
-                        expanded=False,
-                    )
+            st.session_state["last_response"] = None
 
-                # Update session state
-                st.session_state["current_document"] = uploaded_file.name
-                st.session_state["current_pages"] = load_result.total_pages
-                st.session_state["last_response"] = None
-                st.success(f"Indexed **{len(chunks)}** chunks from `{uploaded_file.name}` into ChromaDB.")
-
-            except ScannedOrEmptyPDFError as e:
-                st.error(f"❌ Scanned or Image-only PDF: {str(e)}")
-            except (PDFLoaderError, InvalidPDFError) as e:
-                st.error(f"❌ PDF Processing Error: {str(e)}")
-            except (GeminiEmbedderError, MissingAPIKeyError) as e:
-                st.error(f"❌ Embedding API Error: {str(e)}")
-            except VectorStoreError as e:
-                st.error(f"❌ Vector Storage Error: {str(e)}")
-            except Exception as e:
-                st.error(f"❌ Unexpected Error during indexing: {str(e)}")
+            if summary_stats["indexed"] > 0:
+                st.success(
+                    f"Successfully indexed **{summary_stats['indexed']}** document(s) with **{summary_stats['total_chunks']}** new chunks into ChromaDB."
+                )
+            if summary_stats["skipped"] > 0:
+                st.info(f"Skipped **{summary_stats['skipped']}** already indexed document(s).")
+            if summary_stats["failed"] > 0:
+                st.warning(f"**{summary_stats['failed']}** document(s) encountered errors.")
 
     st.divider()
 

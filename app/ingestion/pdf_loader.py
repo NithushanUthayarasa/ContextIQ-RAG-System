@@ -5,7 +5,7 @@ Extracts text and metadata page-by-page from PDFs using PyMuPDF.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 import re
 import pymupdf
 
@@ -58,9 +58,9 @@ class PDFLoadResult:
 class PDFLoader:
     """Loads a PDF file and extracts text page-by-page with PyMuPDF."""
 
-    def __init__(self, file_path: Union[str, Path]):
+    def __init__(self, file_path: Union[str, Path], source_name: Optional[str] = None):
         self.file_path = Path(file_path)
-        self.filename = self.file_path.name
+        self.filename = source_name if source_name else self.file_path.name
 
     @staticmethod
     def clean_text(text: str) -> str:
