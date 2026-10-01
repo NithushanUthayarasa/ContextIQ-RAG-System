@@ -125,13 +125,14 @@ class ChromaVectorStore:
 
             ids.append(chunk.chunk_id)
             documents.append(chunk.text)
-            metadatas.append(
-                {
-                    "source": chunk.source,
-                    "page_number": int(chunk.page_number),
-                    "chunk_index": int(chunk.chunk_index),
-                }
-            )
+            meta: Dict[str, Any] = {
+                "source": chunk.source,
+                "page_number": int(chunk.page_number),
+                "chunk_index": int(chunk.chunk_index),
+            }
+            if chunk.document_id is not None:
+                meta["document_id"] = chunk.document_id
+            metadatas.append(meta)
             clean_embeddings.append(float_emb)
 
         try:
@@ -200,6 +201,117 @@ class ChromaVectorStore:
     def delete_by_source(self, source: str) -> None:
         """Deletes all chunks associated with a specific document source filename."""
         self.collection.delete(where={"source": source})
+
+    def has_document(self, document_id: str) -> bool:
+        """
+        Checks whether at least one chunk exists with the given document_id.
+
+        Args:
+            document_id: Unique content hash of the document to check.
+
+        Returns:
+            True if the document exists in the store, False otherwise.
+        """
+        if not document_id or not isinstance(document_id, str) or not document_id.strip():
+            return False
+
+        clean_doc_id = document_id.strip()
+        try:
+            res = self.collection.get(where={"document_id": clean_doc_id}, limit=1)
+            ids = res.get("ids", [])
+            return len(ids) > 0
+        except Exception as e:
+            raise VectorStoreError(f"Failed to check document existence: {str(e)}") from e
+
+    def delete_by_document_id(self, document_id: str) -> int:
+        """
+        Deletes all chunks belonging to a specific document_id.
+
+        Args:
+            document_id: Unique content hash of the document to delete.
+
+        Returns:
+            The number of chunks deleted.
+        """
+        if not document_id or not isinstance(document_id, str) or not document_id.strip():
+            return 0
+
+        clean_doc_id = document_id.strip()
+        try:
+            matching = self.collection.get(where={"document_id": clean_doc_id})
+            chunk_ids = matching.get("ids", [])
+            if not chunk_ids:
+                return 0
+
+            self.collection.delete(where={"document_id": clean_doc_id})
+            return len(chunk_ids)
+        except Exception as e:
+            raise VectorStoreError(f"Failed to delete document chunks: {str(e)}") from e
+
+    def list_indexed_documents(self) -> List[Dict[str, Any]]:
+        """
+        Returns document-level summary information derived from ChromaDB metadata.
+        Groups by unique document_id.
+
+        Returns:
+            List of dictionaries with keys:
+            - document_id: Unique document identifier.
+            - source: Original filename or document label.
+            - page_count: Total distinct page numbers in this document.
+            - chunk_count: Total number of chunks indexed for this document.
+        """
+        if self.count() == 0:
+            return []
+
+        try:
+            data = self.collection.get(include=["metadatas"])
+        except Exception as e:
+            raise VectorStoreError(f"Failed to retrieve metadata from ChromaDB: {str(e)}") from e
+
+        metadatas = data.get("metadatas", [])
+        if not metadatas:
+            return []
+
+        docs_map: Dict[str, Dict[str, Any]] = {}
+
+        for meta in metadatas:
+            if not meta:
+                continue
+
+            doc_id = meta.get("document_id")
+            source = meta.get("source", "unknown")
+            if not doc_id:
+                # Graceful fallback for legacy V1 records lacking document_id
+                doc_id = f"legacy_{source}"
+
+            page_num = meta.get("page_number")
+
+            if doc_id not in docs_map:
+                docs_map[doc_id] = {
+                    "document_id": doc_id,
+                    "source": source,
+                    "pages": set(),
+                    "chunk_count": 0,
+                }
+
+            if page_num is not None:
+                docs_map[doc_id]["pages"].add(page_num)
+            docs_map[doc_id]["chunk_count"] += 1
+
+        result = [
+            {
+                "document_id": doc_id,
+                "source": info["source"],
+                "page_count": len(info["pages"]),
+                "chunk_count": info["chunk_count"],
+            }
+            for doc_id, info in docs_map.items()
+        ]
+
+        # Deterministic stable ordering: source + document_id
+        result.sort(key=lambda d: (d["source"], d["document_id"]))
+        return result
+
 
     def reset(self) -> None:
         """
