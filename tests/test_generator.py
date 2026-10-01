@@ -41,7 +41,7 @@ def sample_chunks():
 def test_generator_config_loading(mock_genai_client):
     """Verify default model and max context chars loaded from configuration."""
     generator = GeminiGenerator(api_key="valid-mock-key")
-    assert generator.model_name == "gemini-3.5-flash"
+    assert generator.model_name == "gemini-3.5-flash-lite"
     assert generator.max_context_chars == 12000
 
 
