@@ -133,6 +133,20 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
                 st.success("Vector database cleared.")
                 st.rerun()
 
+        # Conversation history controls
+        conversation = st.session_state.get("conversation")
+        conv_len = len(conversation.get_messages()) if conversation else 0
+        if conv_len > 0:
+            st.divider()
+            st.markdown("### 💬 Conversation")
+            st.caption(f"**{conv_len}** message(s) in session")
+            if st.button("🗑️ Clear Conversation", key="clear_conv_btn", use_container_width=True):
+                if conversation:
+                    conversation.clear()
+                st.session_state["last_response"] = None
+                st.success("Conversation cleared.")
+                st.rerun()
+
         st.divider()
 
         st.markdown("### 🛠️ Configuration")

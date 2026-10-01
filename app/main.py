@@ -24,6 +24,7 @@ from app.ingestion.pdf_loader import (
     InvalidPDFError,
     ScannedOrEmptyPDFError,
 )
+from app.rag.conversation import Conversation
 from app.rag.pipeline import RAGPipeline, RAGPipelineError
 from app.retrieval.retriever import Retriever, RetrieverError
 from app.ui.components import (
@@ -150,6 +151,8 @@ def main():
         st.session_state["last_response"] = None
     if "deleting_doc_id" not in st.session_state:
         st.session_state["deleting_doc_id"] = None
+    if "conversation" not in st.session_state:
+        st.session_state["conversation"] = Conversation()
 
     # Render Sidebar with System Metrics and Hyperparameters
     config = render_sidebar(vector_store)
@@ -284,6 +287,11 @@ def main():
                     pipeline = RAGPipeline(retriever=retriever, generator=generator)
                     response = pipeline.ask(question.strip(), top_k=config["top_k"])
                     st.session_state["last_response"] = response
+
+                    # Record successful exchange in conversation state
+                    if "conversation" in st.session_state and st.session_state["conversation"] is not None:
+                        st.session_state["conversation"].add_user_message(question.strip())
+                        st.session_state["conversation"].add_assistant_message(response.answer)
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
                 st.error(f"RAG Error: {str(e)}")
