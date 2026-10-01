@@ -187,6 +187,43 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         )
         st.session_state["min_similarity"] = min_similarity
 
+        # Document Filter Multiselect
+        selected_doc_ids: Optional[List[str]] = None
+        if indexed_docs:
+            source_counts: Dict[str, int] = {}
+            for d in indexed_docs:
+                src = d.get("source", "unknown")
+                source_counts[src] = source_counts.get(src, 0) + 1
+
+            doc_options: Dict[str, str] = {}
+            for d in indexed_docs:
+                did = d["document_id"]
+                src = d.get("source", "unknown")
+                if source_counts[src] > 1 and not did.startswith("legacy_"):
+                    label = f"📄 {src} ({did[:8]}...)"
+                else:
+                    label = f"📄 {src}"
+                if label in doc_options:
+                    label = f"📄 {src} ({did[:8]})"
+                doc_options[label] = did
+
+            existing_selected = [
+                lbl for lbl in st.session_state.get("selected_doc_labels", [])
+                if lbl in doc_options
+            ]
+
+            selected_labels = st.multiselect(
+                "🔎 Search Scope (Document Filter)",
+                options=list(doc_options.keys()),
+                default=existing_selected,
+                help="Restrict retrieval to one or more documents. Leave empty to search All Documents.",
+            )
+            st.session_state["selected_doc_labels"] = selected_labels
+            if selected_labels:
+                selected_doc_ids = [doc_options[lbl] for lbl in selected_labels]
+            else:
+                selected_doc_ids = None
+
         st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
         st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
 
@@ -195,6 +232,7 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         "chunk_overlap": chunk_overlap,
         "top_k": top_k,
         "min_similarity": min_similarity,
+        "document_ids": selected_doc_ids,
     }
 
 
@@ -212,6 +250,7 @@ def render_retrieved_context(
     retrieved_chunks: List[RetrievedChunk],
     retrieval_query: Optional[str] = None,
     similarity_threshold: Optional[float] = None,
+    document_ids: Optional[List[str]] = None,
 ):
     """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
@@ -220,6 +259,10 @@ def render_retrieved_context(
     with st.expander("🔎 View Retrieved Context (Transparency & Debugging)", expanded=False):
         if retrieval_query:
             st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
+        if document_ids:
+            st.caption(f"**Search Scope:** Filtered to {len(document_ids)} selected document(s)")
+        else:
+            st.caption("**Search Scope:** All Documents")
         if similarity_threshold is not None:
             st.caption(f"**Similarity Threshold Applied:** `{similarity_threshold:.2f}` (filtered chunks with similarity < threshold)")
         st.caption(

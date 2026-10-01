@@ -34,6 +34,7 @@ class ChatMessage:
     retrieved_chunks: List[Any] = field(default_factory=list)
     retrieval_query: Optional[str] = None
     similarity_threshold: Optional[float] = None
+    document_ids: Optional[List[str]] = None
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -65,6 +66,7 @@ class Conversation:
         retrieved_chunks: Optional[List[Any]] = None,
         retrieval_query: Optional[str] = None,
         similarity_threshold: Optional[float] = None,
+        document_ids: Optional[List[str]] = None,
     ) -> ChatMessage:
         """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
         msg = ChatMessage(
@@ -74,6 +76,7 @@ class Conversation:
             retrieved_chunks=list(retrieved_chunks) if retrieved_chunks else [],
             retrieval_query=retrieval_query,
             similarity_threshold=similarity_threshold,
+            document_ids=document_ids,
         )
         self.messages.append(msg)
         return msg

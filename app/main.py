@@ -110,11 +110,12 @@ def handle_chat_turn(
     conversation: Conversation,
     top_k: Optional[int] = None,
     similarity_threshold: Optional[float] = None,
+    document_ids: Optional[List[str]] = None,
 ) -> RAGResponse:
     """
     Executes a single conversational RAG turn.
     Passes conversation history to RAGPipeline for context-aware query rewriting.
-    Records user and assistant messages with source/context/rewritten-query metadata upon success.
+    Records user and assistant messages with source/context/rewritten-query/document-filter metadata upon success.
     """
     cleaned_query = query.strip()
     history = conversation.get_messages() if conversation else []
@@ -124,6 +125,8 @@ def handle_chat_turn(
     }
     if similarity_threshold is not None:
         ask_kwargs["similarity_threshold"] = similarity_threshold
+    if document_ids is not None:
+        ask_kwargs["document_ids"] = document_ids
 
     response = pipeline.ask(cleaned_query, **ask_kwargs)
     conversation.add_user_message(cleaned_query)
@@ -133,6 +136,7 @@ def handle_chat_turn(
         retrieved_chunks=response.retrieved_chunks,
         retrieval_query=response.retrieval_query,
         similarity_threshold=response.similarity_threshold,
+        document_ids=response.document_ids,
     )
     return response
 
@@ -335,6 +339,7 @@ def main():
                             msg.retrieved_chunks,
                             retrieval_query=msg.retrieval_query,
                             similarity_threshold=getattr(msg, "similarity_threshold", None),
+                            document_ids=getattr(msg, "document_ids", None),
                         )
 
     # 2. Chat Input Interaction
@@ -374,6 +379,7 @@ def main():
                         conversation=conversation,
                         top_k=config["top_k"],
                         similarity_threshold=config["min_similarity"],
+                        document_ids=config.get("document_ids"),
                     )
                     st.session_state["last_response"] = response
 
@@ -388,6 +394,7 @@ def main():
                         response.retrieved_chunks,
                         retrieval_query=response.retrieval_query,
                         similarity_threshold=response.similarity_threshold,
+                        document_ids=response.document_ids,
                     )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:

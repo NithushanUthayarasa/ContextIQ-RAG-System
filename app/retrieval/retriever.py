@@ -31,6 +31,11 @@ class InvalidSimilarityThresholdError(RetrieverError, ValueError):
     pass
 
 
+class InvalidDocumentFilterError(RetrieverError, ValueError):
+    """Raised when document_ids filter argument is malformed or invalid."""
+    pass
+
+
 def _validate_similarity_threshold(threshold: Any) -> float:
     """Validates that a similarity threshold is a valid float/int in [0.0, 1.0]."""
     if threshold is None or isinstance(threshold, bool) or not isinstance(threshold, (int, float)):
@@ -45,10 +50,55 @@ def _validate_similarity_threshold(threshold: Any) -> float:
     return val
 
 
+def _validate_and_normalize_document_ids(
+    document_ids: Optional[Any],
+) -> Optional[List[str]]:
+    """
+    Validates and normalizes document_ids input for document filtering.
+
+    Rules:
+    - None -> None (no filtering, search all documents)
+    - [] (empty list or empty collection) -> None (treated as no restriction, search all documents)
+    - string -> raise InvalidDocumentFilterError (prevent strings being iterated character-by-character)
+    - non-iterable / non-sequence -> raise InvalidDocumentFilterError
+    - elements must be non-empty strings
+    - preserves deduplicated unique document IDs
+    """
+    if document_ids is None:
+        return None
+
+    if isinstance(document_ids, (str, bytes)):
+        raise InvalidDocumentFilterError(
+            f"document_ids must be a sequence of strings, not {type(document_ids).__name__}. Pass a list like ['{document_ids}']."
+        )
+
+    if not hasattr(document_ids, "__iter__"):
+        raise InvalidDocumentFilterError(
+            f"document_ids must be an iterable sequence of strings, got: {type(document_ids).__name__}"
+        )
+
+    clean_ids: List[str] = []
+    seen = set()
+    for item in document_ids:
+        if not isinstance(item, str) or not item.strip():
+            raise InvalidDocumentFilterError(
+                f"Each document_id must be a non-empty string, got: {repr(item)}"
+            )
+        cleaned = item.strip()
+        if cleaned not in seen:
+            seen.add(cleaned)
+            clean_ids.append(cleaned)
+
+    if not clean_ids:
+        return None
+
+    return clean_ids
+
+
 class Retriever:
     """
     Coordinates semantic retrieval using an injected GeminiEmbedder and ChromaVectorStore,
-    with configurable minimum similarity threshold filtering.
+    with configurable minimum similarity threshold and metadata-aware document filtering.
     """
 
     def __init__(
@@ -74,25 +124,28 @@ class Retriever:
         top_k: Optional[int] = None,
         where: Optional[Dict[str, Any]] = None,
         similarity_threshold: Optional[float] = None,
+        document_ids: Optional[List[str]] = None,
     ) -> List[RetrievedChunk]:
         """
         Embeds a user query, queries ChromaDB, and returns the top_k most relevant chunks
-        that satisfy the minimum cosine similarity threshold.
+        that satisfy the minimum cosine similarity threshold and optional document_ids filter.
 
         Args:
             query: The user's search query or question.
             top_k: Maximum number of candidate chunks to retrieve from vector store.
-            where: Optional metadata filter dictionary.
+            where: Optional base metadata filter dictionary.
             similarity_threshold: Optional override for minimum cosine similarity threshold (0.0 to 1.0).
+            document_ids: Optional list of document_id strings to restrict retrieval scope.
 
         Returns:
             List of RetrievedChunk objects ordered by cosine distance (nearest first),
-            retaining only those with cosine_similarity >= threshold.
+            retaining only those matching document_ids and having cosine_similarity >= threshold.
 
         Raises:
             EmptyQueryError: If query is empty or whitespace-only.
             InvalidTopKError: If top_k is <= 0 or not an integer.
             InvalidSimilarityThresholdError: If similarity_threshold is outside [0.0, 1.0].
+            InvalidDocumentFilterError: If document_ids is malformed.
             RetrieverError: If embedding or vector store query fails.
         """
         if not query or not query.strip():
@@ -110,6 +163,21 @@ class Retriever:
             else self.default_min_similarity
         )
 
+        norm_doc_ids = _validate_and_normalize_document_ids(document_ids)
+
+        # Build ChromaDB metadata filter
+        where_filter = where
+        if norm_doc_ids is not None:
+            if len(norm_doc_ids) == 1:
+                doc_filter: Dict[str, Any] = {"document_id": norm_doc_ids[0]}
+            else:
+                doc_filter = {"document_id": {"$in": norm_doc_ids}}
+
+            if where is not None:
+                where_filter = {"$and": [where, doc_filter]}
+            else:
+                where_filter = doc_filter
+
         # If vector store is empty, return empty list gracefully
         if self.vector_store.count() == 0:
             return []
@@ -123,7 +191,7 @@ class Retriever:
             raw_results = self.vector_store.query(
                 query_embedding=query_vector,
                 top_k=k,
-                where=where,
+                where=where_filter,
             )
         except Exception as e:
             raise RetrieverError(f"Failed to execute vector store query: {str(e)}") from e

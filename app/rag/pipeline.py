@@ -24,6 +24,7 @@ class RAGResponse:
     query: str
     retrieval_query: Optional[str] = None
     similarity_threshold: Optional[float] = None
+    document_ids: Optional[List[str]] = None
 
     def __post_init__(self):
         if self.retrieval_query is None:
@@ -78,6 +79,7 @@ class RAGPipeline:
         top_k: Optional[int] = None,
         conversation_messages: Optional[List[Any]] = None,
         similarity_threshold: Optional[float] = None,
+        document_ids: Optional[List[str]] = None,
     ) -> RAGResponse:
         """
         Executes the end-to-end RAG pipeline for a user question.
@@ -87,6 +89,7 @@ class RAGPipeline:
             top_k: Number of relevant chunks to retrieve (optional override).
             conversation_messages: Optional sequence of prior ChatMessage objects for query rewriting.
             similarity_threshold: Optional minimum cosine similarity threshold override.
+            document_ids: Optional list of document_id strings to restrict retrieval scope.
 
         Returns:
             RAGResponse containing generated answer, cited sources, retrieved chunks, and query.
@@ -116,10 +119,12 @@ class RAGPipeline:
         if not retrieval_query or not retrieval_query.strip():
             retrieval_query = cleaned_question
 
-        # Step 1: Semantic retrieval using standalone query with similarity threshold filtering
+        # Step 1: Semantic retrieval using standalone query with similarity threshold and document filtering
         retrieve_kwargs: Dict[str, Any] = {"query": retrieval_query, "top_k": top_k}
         if similarity_threshold is not None:
             retrieve_kwargs["similarity_threshold"] = similarity_threshold
+        if document_ids is not None:
+            retrieve_kwargs["document_ids"] = document_ids
 
         retrieved_chunks = self.retriever.retrieve(**retrieve_kwargs)
 
@@ -146,4 +151,5 @@ class RAGPipeline:
             query=cleaned_question,
             retrieval_query=retrieval_query,
             similarity_threshold=effective_threshold,
+            document_ids=document_ids,
         )
