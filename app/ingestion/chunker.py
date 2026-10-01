@@ -21,6 +21,8 @@ class DocumentChunk:
     page_number: int
     chunk_index: int
     document_id: Optional[str] = None
+    parent_id: Optional[str] = None
+    parent_index: Optional[int] = None
 
     def __post_init__(self):
         if not self.chunk_id:
@@ -34,6 +36,12 @@ class DocumentChunk:
         if self.document_id is not None:
             if not isinstance(self.document_id, str) or not self.document_id.strip():
                 raise ValueError("document_id must be a non-empty string when provided.")
+        if self.parent_id is not None:
+            if not isinstance(self.parent_id, str) or not self.parent_id.strip():
+                raise ValueError("parent_id must be a non-empty string when provided.")
+        if self.parent_index is not None:
+            if not isinstance(self.parent_index, int) or self.parent_index < 0:
+                raise ValueError("parent_index must be an integer >= 0.")
 
 
 class TextChunker:

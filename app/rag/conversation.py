@@ -40,6 +40,10 @@ class ChatMessage:
     candidates_retrieved: Optional[int] = None
     query_expansion_enabled: bool = False
     expanded_queries: List[str] = field(default_factory=list)
+    # Parent/Child metadata
+    parent_child_enabled: bool = False
+    child_chunks_retrieved: Optional[int] = None
+    parent_contexts_used: Optional[int] = None
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -77,6 +81,9 @@ class Conversation:
         candidates_retrieved: Optional[int] = None,
         query_expansion_enabled: bool = False,
         expanded_queries: Optional[List[str]] = None,
+        parent_child_enabled: bool = False,
+        child_chunks_retrieved: Optional[int] = None,
+        parent_contexts_used: Optional[int] = None,
     ) -> ChatMessage:
         """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
         msg = ChatMessage(
@@ -92,6 +99,9 @@ class Conversation:
             candidates_retrieved=candidates_retrieved,
             query_expansion_enabled=query_expansion_enabled,
             expanded_queries=list(expanded_queries) if expanded_queries else [],
+            parent_child_enabled=parent_child_enabled,
+            child_chunks_retrieved=child_chunks_retrieved,
+            parent_contexts_used=parent_contexts_used,
         )
         self.messages.append(msg)
         return msg

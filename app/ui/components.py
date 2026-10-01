@@ -266,6 +266,17 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         )
         st.session_state["query_expansion_enabled"] = query_expansion_enabled
 
+        # Parent/Child Retrieval Toggle
+        parent_child_enabled = st.toggle(
+            "⚡ Enable Parent/Child Retrieval",
+            value=st.session_state.get("parent_child_enabled", False),
+            help=(
+                "When enabled, child chunks are used for precise matching and reranking, "
+                "then expanded to full parent sections before generating the answer."
+            ),
+        )
+        st.session_state["parent_child_enabled"] = parent_child_enabled
+
         st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
         st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
 
@@ -278,6 +289,7 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         "retrieval_mode": retrieval_mode,
         "reranker_enabled": reranker_enabled,
         "query_expansion_enabled": query_expansion_enabled,
+        "parent_child_enabled": parent_child_enabled,
     }
 
 
@@ -301,6 +313,9 @@ def render_retrieved_context(
     candidates_retrieved: Optional[int] = None,
     query_expansion_enabled: bool = False,
     expanded_queries: Optional[List[str]] = None,
+    parent_child_enabled: bool = False,
+    child_chunks_retrieved: Optional[int] = None,
+    parent_contexts_used: Optional[int] = None,
 ):
     """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
@@ -329,6 +344,14 @@ def render_retrieved_context(
         else:
             st.caption("**Reranking:** Disabled")
 
+        # Parent/Child transparency
+        if parent_child_enabled:
+            child_cnt = child_chunks_retrieved if child_chunks_retrieved is not None else len(retrieved_chunks)
+            parent_cnt = parent_contexts_used if parent_contexts_used is not None else len(retrieved_chunks)
+            st.caption(f"**Parent/Child Retrieval:** Enabled | **Child Candidates:** {child_cnt} | **Parent Contexts:** {parent_cnt}")
+        else:
+            st.caption("**Parent/Child Retrieval:** Disabled")
+
         if document_ids:
             st.caption(f"**Search Scope:** Filtered to {len(document_ids)} selected document(s)")
         else:
@@ -343,6 +366,16 @@ def render_retrieved_context(
             doc_badge = (
                 f" | <code>{chunk.document_id[:8]}...</code>"
                 if getattr(chunk, "document_id", None)
+                else ""
+            )
+            parent_badge = (
+                f" | <strong>Parent:</strong> <code>{chunk.parent_id}</code>"
+                if getattr(chunk, "parent_id", None)
+                else ""
+            )
+            child_badge = (
+                f" | <strong>Child:</strong> <code>{chunk.original_child_id}</code>"
+                if getattr(chunk, "original_child_id", None)
                 else ""
             )
 
@@ -367,7 +400,7 @@ def render_retrieved_context(
                 f"""
                 <div class="chunk-container">
                     <div class="chunk-meta">
-                        <span><strong>Chunk #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Chunk {chunk.chunk_index}){doc_badge}</span>
+                        <span><strong>Context #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Index {chunk.chunk_index}){doc_badge}{parent_badge}{child_badge}</span>
                         <span>{metrics_html}</span>
                     </div>
                     <div class="chunk-text">{chunk.text}</div>

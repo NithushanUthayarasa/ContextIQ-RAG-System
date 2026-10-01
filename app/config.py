@@ -55,6 +55,10 @@ try:
     QUERY_EXPANSION_MAX_QUERIES = _qe_max
 except Exception:
     raise ValueError("QUERY_EXPANSION_MAX_QUERIES must be an integer >= 1")
+# Parent/Child Retrieval Configuration
+PARENT_CHILD_ENABLED = os.getenv("PARENT_CHILD_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+DEFAULT_PARENT_CHUNK_SIZE = int(os.getenv("DEFAULT_PARENT_CHUNK_SIZE", 2000))
+DEFAULT_PARENT_CHUNK_OVERLAP = int(os.getenv("DEFAULT_PARENT_CHUNK_OVERLAP", 200))
 
 # Storage Directories
 DATA_DIR = BASE_DIR / "data"

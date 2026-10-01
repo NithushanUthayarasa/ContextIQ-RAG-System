@@ -45,6 +45,8 @@ class BM25Result:
     chunk_index: int
     score: float
     document_id: Optional[str] = None
+    parent_id: Optional[str] = None
+    parent_index: Optional[int] = None
 
 
 @dataclass
@@ -58,6 +60,8 @@ class _IndexedDocument:
     document_id: Optional[str]
     length: int
     term_frequencies: Dict[str, int]
+    parent_id: Optional[str] = None
+    parent_index: Optional[int] = None
 
 
 class BM25Index:
@@ -112,6 +116,8 @@ class BM25Index:
                 page_number = int(meta.get("page_number", 1))
                 chunk_index = int(meta.get("chunk_index", 0))
                 doc_id = meta.get("document_id")
+                parent_id = meta.get("parent_id")
+                parent_index = int(meta["parent_index"]) if meta.get("parent_index") is not None else None
             elif hasattr(item, "chunk_id"):
                 chunk_id = str(item.chunk_id)
                 text = str(getattr(item, "text", ""))
@@ -119,6 +125,8 @@ class BM25Index:
                 page_number = int(getattr(item, "page_number", 1))
                 chunk_index = int(getattr(item, "chunk_index", 0))
                 doc_id = getattr(item, "document_id", None)
+                parent_id = getattr(item, "parent_id", None)
+                parent_index = getattr(item, "parent_index", None)
             else:
                 continue
 
@@ -138,6 +146,8 @@ class BM25Index:
                 document_id=doc_id,
                 length=doc_len,
                 term_frequencies=term_freqs,
+                parent_id=parent_id,
+                parent_index=parent_index,
             )
             self.documents[chunk_id] = doc
             self.total_length += doc_len
@@ -216,6 +226,8 @@ class BM25Index:
                         chunk_index=doc.chunk_index,
                         score=score,
                         document_id=doc.document_id,
+                        parent_id=doc.parent_id,
+                        parent_index=doc.parent_index,
                     )
                 )
 

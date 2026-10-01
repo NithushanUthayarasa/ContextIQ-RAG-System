@@ -41,6 +41,10 @@ class RetrievalResult:
     # Reranking metadata — populated by a Reranker; never set by the Retriever.
     rerank_score: Optional[float] = None
     original_rank: Optional[int] = None
+    # Parent/Child metadata — populated when parent/child structure is present
+    parent_id: Optional[str] = None
+    parent_index: Optional[int] = None
+    original_child_id: Optional[str] = None
 
     @property
     def cosine_similarity(self) -> Optional[float]:

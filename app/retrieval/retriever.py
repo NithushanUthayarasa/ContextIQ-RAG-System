@@ -210,6 +210,8 @@ class Retriever:
                 document_id=meta_dict.get("document_id"),
                 semantic_rank=rank,
                 retrieval_method="semantic",
+                parent_id=meta_dict.get("parent_id"),
+                parent_index=int(meta_dict["parent_index"]) if meta_dict.get("parent_index") is not None else None,
             )
             # Filter by minimum cosine similarity threshold
             if chunk.cosine_similarity >= thresh:
@@ -248,6 +250,8 @@ class Retriever:
                 bm25_score=r.score,
                 bm25_rank=rank,
                 retrieval_method="bm25",
+                parent_id=getattr(r, "parent_id", None),
+                parent_index=getattr(r, "parent_index", None),
             )
             results.append(chunk)
 

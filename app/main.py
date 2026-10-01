@@ -12,8 +12,11 @@ from app.config import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_MIN_SIMILARITY,
+    DEFAULT_PARENT_CHUNK_OVERLAP,
+    DEFAULT_PARENT_CHUNK_SIZE,
     DEFAULT_RETRIEVAL_MODE,
     DEFAULT_TOP_K,
+    PARENT_CHILD_ENABLED,
     QUERY_EXPANSION_ENABLED,
     RERANKER_ENABLED,
     RERANKER_CANDIDATE_MULTIPLIER,
@@ -22,6 +25,7 @@ from app.config import (
 )
 from app.generation.generator import GeminiGenerator, GeminiGenerationError
 from app.ingestion.chunker import TextChunker
+from app.ingestion.parent_chunker import ParentChildChunker
 from app.ingestion.embedder import GeminiEmbedder, GeminiEmbedderError, MissingAPIKeyError
 from app.ingestion.pdf_loader import (
     PDFLoader,
@@ -89,14 +93,23 @@ def ingest_pdf_bytes(
     loader = PDFLoader(staging_path, source_name=file_name)
     load_result = loader.load()
 
-    # 5. Chunk pages with document_id identity
-    chunker = TextChunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    chunks = chunker.split_pages(load_result.pages, document_id=document_id)
+    # 5. Chunk pages into parent sections and child chunks with document_id identity
+    parent_chunk_size = max(DEFAULT_PARENT_CHUNK_SIZE, chunk_size * 2)
+    parent_chunker = ParentChildChunker(
+        parent_chunk_size=parent_chunk_size,
+        parent_chunk_overlap=DEFAULT_PARENT_CHUNK_OVERLAP,
+        child_chunk_size=chunk_size,
+        child_chunk_overlap=chunk_overlap,
+    )
+    parent_chunks, chunks = parent_chunker.split_pages(load_result.pages, document_id=document_id)
 
-    # 6. Generate Gemini embeddings for new chunks
+    # 6. Store parent sections in ChromaDB
+    vector_store.add_parents(parent_chunks)
+
+    # 7. Generate Gemini embeddings for child chunks
     embeddings = embedder.embed_documents(chunks)
 
-    # 7. Store in ChromaDB
+    # 8. Store child chunks in ChromaDB
     vector_store.add_chunks(chunks, embeddings)
 
     return {
@@ -118,6 +131,7 @@ def handle_chat_turn(
     similarity_threshold: Optional[float] = None,
     document_ids: Optional[List[str]] = None,
     retrieval_mode: Optional[str] = None,
+    parent_child_enabled: Optional[bool] = None,
 ) -> RAGResponse:
     """
     Executes a single conversational RAG turn.
@@ -136,6 +150,8 @@ def handle_chat_turn(
         ask_kwargs["document_ids"] = document_ids
     if retrieval_mode is not None:
         ask_kwargs["retrieval_mode"] = retrieval_mode
+    if parent_child_enabled is not None:
+        ask_kwargs["parent_child_enabled"] = parent_child_enabled
 
     response = pipeline.ask(cleaned_query, **ask_kwargs)
     conversation.add_user_message(cleaned_query)
@@ -151,6 +167,9 @@ def handle_chat_turn(
         candidates_retrieved=getattr(response, "candidates_retrieved", None),
         query_expansion_enabled=getattr(response, "query_expansion_enabled", False),
         expanded_queries=getattr(response, "expanded_queries", []),
+        parent_child_enabled=getattr(response, "parent_child_enabled", False),
+        child_chunks_retrieved=getattr(response, "child_chunks_retrieved", None),
+        parent_contexts_used=getattr(response, "parent_contexts_used", None),
     )
     return response
 
@@ -222,6 +241,8 @@ def main():
         st.session_state["reranker_enabled"] = RERANKER_ENABLED
     if "query_expansion_enabled" not in st.session_state:
         st.session_state["query_expansion_enabled"] = QUERY_EXPANSION_ENABLED
+    if "parent_child_enabled" not in st.session_state:
+        st.session_state["parent_child_enabled"] = PARENT_CHILD_ENABLED
 
     # Render Sidebar with System Metrics and Hyperparameters
     config = render_sidebar(vector_store)
@@ -365,6 +386,9 @@ def main():
                             candidates_retrieved=getattr(msg, "candidates_retrieved", None),
                             query_expansion_enabled=getattr(msg, "query_expansion_enabled", False),
                             expanded_queries=getattr(msg, "expanded_queries", []),
+                            parent_child_enabled=getattr(msg, "parent_child_enabled", False),
+                            child_chunks_retrieved=getattr(msg, "child_chunks_retrieved", None),
+                            parent_contexts_used=getattr(msg, "parent_contexts_used", None),
                         )
 
     # 2. Chat Input Interaction
@@ -403,6 +427,8 @@ def main():
                         reranker=reranker,
                         reranker_candidate_multiplier=RERANKER_CANDIDATE_MULTIPLIER,
                         query_expander=query_expander,
+                        parent_store=vector_store,
+                        parent_child_enabled=config.get("parent_child_enabled", PARENT_CHILD_ENABLED),
                     )
                     response = handle_chat_turn(
                         query=user_query,
@@ -412,6 +438,7 @@ def main():
                         similarity_threshold=config["min_similarity"],
                         document_ids=config.get("document_ids"),
                         retrieval_mode=config.get("retrieval_mode"),
+                        parent_child_enabled=config.get("parent_child_enabled", PARENT_CHILD_ENABLED),
                     )
                     st.session_state["last_response"] = response
 
@@ -432,6 +459,9 @@ def main():
                         candidates_retrieved=getattr(response, "candidates_retrieved", None),
                         query_expansion_enabled=getattr(response, "query_expansion_enabled", False),
                         expanded_queries=getattr(response, "expanded_queries", []),
+                        parent_child_enabled=getattr(response, "parent_child_enabled", False),
+                        child_chunks_retrieved=getattr(response, "child_chunks_retrieved", None),
+                        parent_contexts_used=getattr(response, "parent_contexts_used", None),
                     )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:

@@ -17,8 +17,9 @@ The rewritten retrieval query is used for both retrieval and reranking.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from app.config import QUERY_EXPANSION_MAX_QUERIES
+from app.config import PARENT_CHILD_ENABLED, QUERY_EXPANSION_MAX_QUERIES
 from app.generation.generator import GeminiGenerator, EmptyQuestionError
+from app.retrieval.parent_context import resolve_parent_context
 from app.retrieval.retriever import RetrievedChunk, Retriever
 
 
@@ -44,6 +45,10 @@ class RAGResponse:
     # Query expansion transparency fields
     query_expansion_enabled: bool = False
     expanded_queries: List[str] = field(default_factory=list)
+    # Parent/Child transparency fields
+    parent_child_enabled: bool = False
+    child_chunks_retrieved: Optional[int] = None
+    parent_contexts_used: Optional[int] = None
 
     def __post_init__(self):
         if self.retrieval_query is None:
@@ -52,8 +57,8 @@ class RAGResponse:
 
 class RAGPipeline:
     """
-    Coordinates semantic/hybrid retrieval, optional reranking, and LLM generation
-    through dependency injection.
+    Coordinates semantic/hybrid retrieval, optional reranking, parent context resolution,
+    and LLM generation through dependency injection.
 
     Decoupled from specific vector stores, generative models, query rewriters,
     and rerankers.
@@ -67,6 +72,8 @@ class RAGPipeline:
         reranker: Optional[Any] = None,
         reranker_candidate_multiplier: int = 3,
         query_expander: Optional[Any] = None,
+        parent_store: Optional[Any] = None,
+        parent_child_enabled: bool = PARENT_CHILD_ENABLED,
     ):
         if retriever is None:
             raise RAGPipelineError("A valid Retriever instance must be provided.")
@@ -79,6 +86,8 @@ class RAGPipeline:
         self.reranker = reranker
         self.reranker_candidate_multiplier = max(1, int(reranker_candidate_multiplier))
         self.query_expander = query_expander
+        self.parent_store = parent_store
+        self.parent_child_enabled = bool(parent_child_enabled)
 
     @staticmethod
     def extract_sources(chunks: List[RetrievedChunk]) -> List[Dict[str, Any]]:
@@ -109,6 +118,7 @@ class RAGPipeline:
         similarity_threshold: Optional[float] = None,
         document_ids: Optional[List[str]] = None,
         retrieval_mode: Optional[str] = None,
+        parent_child_enabled: Optional[bool] = None,
     ) -> RAGResponse:
         """
         Executes the end-to-end RAG pipeline for a user question.
@@ -120,6 +130,7 @@ class RAGPipeline:
             similarity_threshold: Optional minimum cosine similarity threshold override.
             document_ids: Optional list of document_id strings to restrict retrieval scope.
             retrieval_mode: Optional retrieval mode ("semantic", "bm25", "hybrid").
+            parent_child_enabled: Optional override for parent section context expansion.
 
         Returns:
             RAGResponse containing generated answer, cited sources, retrieved chunks, and query.
@@ -216,15 +227,31 @@ class RAGPipeline:
 
         # Apply reranking if enabled
         if reranking_active and deduped:
-            final_chunks = self.reranker.rerank(
+            reranked_chunks = self.reranker.rerank(
                 query=retrieval_query,
                 candidates=deduped,
                 top_k=final_k,
             )
         else:
-            final_chunks = deduped
+            reranked_chunks = deduped[:final_k] if final_k is not None else deduped
 
-        # Source deduplication and generation as before
+        # Step 5: Parent Context Resolution (optional)
+        is_parent_child = (
+            parent_child_enabled
+            if parent_child_enabled is not None
+            else self.parent_child_enabled
+        )
+        child_chunks_retrieved = len(deduped)
+
+        if is_parent_child and reranked_chunks:
+            p_store = self.parent_store or getattr(self.retriever, "vector_store", None)
+            final_chunks = resolve_parent_context(reranked_chunks, parent_store=p_store)
+            parent_contexts_used = len(final_chunks)
+        else:
+            final_chunks = reranked_chunks
+            parent_contexts_used = None
+
+        # Source deduplication and generation
         sources = self.extract_sources(final_chunks)
         answer = self.generator.generate(
             question=cleaned_question,
@@ -256,4 +283,7 @@ class RAGPipeline:
             candidates_retrieved=candidates_retrieved,
             query_expansion_enabled=query_expansion_enabled,
             expanded_queries=expanded_queries,
+            parent_child_enabled=is_parent_child,
+            child_chunks_retrieved=child_chunks_retrieved,
+            parent_contexts_used=parent_contexts_used,
         )
