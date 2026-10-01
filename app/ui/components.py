@@ -3,7 +3,7 @@ ContextIQ - UI Components Module
 Reusable visual components for Streamlit interface: headers, sidebar, cards, sources, and context viewers.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import streamlit as st
 
 from app.config import (
@@ -196,12 +196,17 @@ def render_sources(sources: List[Dict[str, Any]]):
         st.markdown(f"📄 {s['source']} — Page {s['page']}")
 
 
-def render_retrieved_context(retrieved_chunks: List[RetrievedChunk]):
-    """Renders an expandable inspector for retrieved context chunks."""
+def render_retrieved_context(
+    retrieved_chunks: List[RetrievedChunk],
+    retrieval_query: Optional[str] = None,
+):
+    """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
         return
 
     with st.expander("🔎 View Retrieved Context (Transparency & Debugging)", expanded=False):
+        if retrieval_query:
+            st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
         st.caption(
             "Inspecting the raw chunks retrieved from ChromaDB before generation. "
             "Lower distance indicates higher semantic relevance."

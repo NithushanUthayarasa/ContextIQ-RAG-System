@@ -26,6 +26,7 @@ from app.ingestion.pdf_loader import (
 )
 from app.rag.conversation import Conversation
 from app.rag.pipeline import RAGPipeline, RAGPipelineError
+from app.rag.query_rewriter import QueryRewriter
 from app.retrieval.retriever import Retriever, RetrieverError
 from app.ui.components import (
     apply_custom_styles,
@@ -110,16 +111,22 @@ def handle_chat_turn(
 ) -> RAGResponse:
     """
     Executes a single conversational RAG turn.
-    Passes literal user query directly to RAGPipeline.ask() without history modification.
-    Records user and assistant messages with source/context metadata upon success.
+    Passes conversation history to RAGPipeline for context-aware query rewriting.
+    Records user and assistant messages with source/context/rewritten-query metadata upon success.
     """
     cleaned_query = query.strip()
-    response = pipeline.ask(cleaned_query, top_k=top_k)
+    history = conversation.get_messages() if conversation else []
+    response = pipeline.ask(
+        cleaned_query,
+        top_k=top_k,
+        conversation_messages=history,
+    )
     conversation.add_user_message(cleaned_query)
     conversation.add_assistant_message(
         content=response.answer,
         sources=response.sources,
         retrieved_chunks=response.retrieved_chunks,
+        retrieval_query=response.retrieval_query,
     )
     return response
 
@@ -138,6 +145,14 @@ def get_embedder() -> GeminiEmbedder:
 @st.cache_resource(show_spinner=False)
 def get_generator() -> GeminiGenerator:
     return GeminiGenerator()
+
+
+@st.cache_resource(show_spinner=False)
+def get_query_rewriter() -> Optional[QueryRewriter]:
+    try:
+        return QueryRewriter()
+    except Exception:
+        return None
 
 
 def main():
@@ -308,7 +323,10 @@ def main():
                     if msg.sources:
                         render_sources(msg.sources)
                     if msg.retrieved_chunks:
-                        render_retrieved_context(msg.retrieved_chunks)
+                        render_retrieved_context(
+                            msg.retrieved_chunks,
+                            retrieval_query=msg.retrieval_query,
+                        )
 
     # 2. Chat Input Interaction
     prompt = st.chat_input(
@@ -329,12 +347,17 @@ def main():
                 with st.spinner("Retrieving relevant context and generating grounded answer..."):
                     embedder = get_embedder()
                     generator = get_generator()
+                    rewriter = get_query_rewriter()
                     retriever = Retriever(
                         embedder=embedder,
                         vector_store=vector_store,
                         default_top_k=config["top_k"],
                     )
-                    pipeline = RAGPipeline(retriever=retriever, generator=generator)
+                    pipeline = RAGPipeline(
+                        retriever=retriever,
+                        generator=generator,
+                        query_rewriter=rewriter,
+                    )
                     response = handle_chat_turn(
                         query=user_query,
                         pipeline=pipeline,
@@ -350,7 +373,10 @@ def main():
                     render_sources(response.sources)
 
                 if response.retrieved_chunks:
-                    render_retrieved_context(response.retrieved_chunks)
+                    render_retrieved_context(
+                        response.retrieved_chunks,
+                        retrieval_query=response.retrieval_query,
+                    )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
                 st.error(f"RAG Error: {str(e)}")

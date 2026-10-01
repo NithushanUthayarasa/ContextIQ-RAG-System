@@ -189,5 +189,9 @@ def test_follow_up_query_passed_verbatim():
     # Second turn (follow-up)
     handle_chat_turn("Why is it useful?", mock_pipeline, conv, top_k=5)
 
-    # Must be called with the exact literal string "Why is it useful?"
-    mock_pipeline.ask.assert_called_once_with("Why is it useful?", top_k=5)
+    # Must be called with the exact literal string "Why is it useful?" and conversation history
+    mock_pipeline.ask.assert_called_once_with(
+        "Why is it useful?",
+        top_k=5,
+        conversation_messages=conv.get_messages()[:2],
+    )

@@ -32,6 +32,7 @@ class ChatMessage:
     content: str
     sources: List[Dict[str, Any]] = field(default_factory=list)
     retrieved_chunks: List[Any] = field(default_factory=list)
+    retrieval_query: Optional[str] = None
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -61,6 +62,7 @@ class Conversation:
         content: str,
         sources: Optional[List[Dict[str, Any]]] = None,
         retrieved_chunks: Optional[List[Any]] = None,
+        retrieval_query: Optional[str] = None,
     ) -> ChatMessage:
         """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
         msg = ChatMessage(
@@ -68,6 +70,7 @@ class Conversation:
             content=content,
             sources=list(sources) if sources else [],
             retrieved_chunks=list(retrieved_chunks) if retrieved_chunks else [],
+            retrieval_query=retrieval_query,
         )
         self.messages.append(msg)
         return msg
