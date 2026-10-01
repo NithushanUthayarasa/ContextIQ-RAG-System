@@ -121,16 +121,13 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
 
 
 def render_sources(sources: List[Dict[str, Any]]):
-    """Renders cited source badges."""
+    """Renders cited sources on separate lines."""
     if not sources:
         return
 
     st.markdown("#### 📚 Sources")
-    pills_html = ""
     for s in sources:
-        pills_html += f'<span class="source-pill">📄 {s["source"]} — Page {s["page"]}</span>'
-
-    st.markdown(pills_html, unsafe_allow_html=True)
+        st.markdown(f"📄 {s['source']} — Page {s['page']}")
 
 
 def render_retrieved_context(retrieved_chunks: List[RetrievedChunk]):
