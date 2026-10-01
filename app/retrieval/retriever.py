@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from app.config import DEFAULT_TOP_K
 from app.ingestion.embedder import GeminiEmbedder
+from app.retrieval.models import RetrievalResult, RetrievedChunk
 from app.vectorstore.chroma_store import ChromaVectorStore
 
 
@@ -24,25 +25,6 @@ class EmptyQueryError(RetrieverError, ValueError):
 class InvalidTopKError(RetrieverError, ValueError):
     """Raised when top_k is invalid (<= 0 or not an integer)."""
     pass
-
-
-@dataclass
-class RetrievedChunk:
-    """Represents a retrieved document chunk with similarity distance and metadata."""
-    chunk_id: str
-    text: str
-    source: str
-    page_number: int
-    chunk_index: int
-    distance: float
-
-    @property
-    def cosine_similarity(self) -> float:
-        """
-        Calculates cosine similarity from cosine distance:
-        similarity = 1.0 - cosine_distance.
-        """
-        return 1.0 - self.distance
 
 
 class Retriever:
@@ -139,6 +121,7 @@ class Retriever:
                     page_number=int(meta_dict.get("page_number", 1)),
                     chunk_index=int(meta_dict.get("chunk_index", 0)),
                     distance=float(dist),
+                    document_id=meta_dict.get("document_id"),
                 )
             )
 

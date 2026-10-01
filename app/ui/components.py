@@ -208,16 +208,21 @@ def render_retrieved_context(
         if retrieval_query:
             st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
         st.caption(
-            "Inspecting the raw chunks retrieved from ChromaDB before generation. "
-            "Lower distance indicates higher semantic relevance."
+            "Inspecting raw chunks retrieved from ChromaDB (ordered nearest first). "
+            "Lower cosine distance indicates closer match (Cosine Similarity = 1 - Distance)."
         )
         for idx, chunk in enumerate(retrieved_chunks, start=1):
+            doc_badge = (
+                f" | <code>{chunk.document_id[:8]}...</code>"
+                if getattr(chunk, "document_id", None)
+                else ""
+            )
             st.markdown(
                 f"""
                 <div class="chunk-container">
                     <div class="chunk-meta">
-                        <span><strong>Chunk #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number})</span>
-                        <span><strong>Distance:</strong> {chunk.distance:.4f} | <strong>ID:</strong> {chunk.chunk_id}</span>
+                        <span><strong>Chunk #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Chunk {chunk.chunk_index}){doc_badge}</span>
+                        <span><strong>Distance:</strong> {chunk.distance:.4f} | <strong>Similarity:</strong> {chunk.cosine_similarity:.4f}</span>
                     </div>
                     <div class="chunk-text">{chunk.text}</div>
                 </div>
