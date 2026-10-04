@@ -1,0 +1,3111 @@
+{
+  "timestamp": "2026-10-04T19:46:55.947246+00:00",
+  "configurations_count": 5,
+  "configurations": {
+    "C1_Hybrid_Baseline": {
+      "configuration_id": "C1_Hybrid_Baseline",
+      "description": "Hybrid retrieval only (Semantic + BM25 + RRF)",
+      "queries_evaluated": 15,
+      "metrics": {
+        "hit_at_3": 0.9167,
+        "hit_at_5": 1.0,
+        "recall_at_3": 0.7917,
+        "recall_at_5": 0.9583,
+        "mrr_at_3": 0.9167,
+        "mrr_at_5": 0.9375,
+        "avg_original_chars": 3650.1,
+        "avg_compressed_chars": 3650.1,
+        "avg_context_reduction_pct": 0.0,
+        "avg_evidence_retention_rate": 1.0,
+        "avg_citation_precision": 0.2875,
+        "avg_citation_recall": 0.9583,
+        "refusal_accuracy": 1.0
+      },
+      "per_query_results": [
+        {
+          "query_id": "q01",
+          "query_type": "conceptual",
+          "question": "What is the difference between authentication and authorization?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2878,
+          "compressed_chars": 2878,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 14
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 1
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q02",
+          "query_type": "conceptual",
+          "question": "Explain the ACID principles of Atomicity and Consistency in database transactions.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3628,
+          "compressed_chars": 3628,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.4,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 9
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 8
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 10
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 12
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 13
+            }
+          ]
+        },
+        {
+          "query_id": "q03",
+          "query_type": "conceptual",
+          "question": "What is Second Normal Form (2NF) and what dependency does it eliminate?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3688,
+          "compressed_chars": 3688,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 22
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 21
+            }
+          ]
+        },
+        {
+          "query_id": "q04",
+          "query_type": "technical",
+          "question": "What are the three parts of a JSON Web Token (JWT) structure?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3458,
+          "compressed_chars": 3458,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 60
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 7
+            }
+          ]
+        },
+        {
+          "query_id": "q05",
+          "query_type": "technical",
+          "question": "What is an Object-Relational Mapper (ORM) in Entity Framework Core?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4032,
+          "compressed_chars": 4032,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 32
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 16
+            }
+          ]
+        },
+        {
+          "query_id": "q06",
+          "query_type": "technical",
+          "question": "Why does a database connection pool improve application performance?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3017,
+          "compressed_chars": 3017,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            }
+          ]
+        },
+        {
+          "query_id": "q07",
+          "query_type": "exact_detail",
+          "question": "How is password storage configured in the LankaMart PostgreSQL schema?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 4219,
+          "compressed_chars": 4219,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 29
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 60
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 14
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            }
+          ]
+        },
+        {
+          "query_id": "q08",
+          "query_type": "exact_detail",
+          "question": "How do you protect an ASP.NET Core controller endpoint by role in ProductsController?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3695,
+          "compressed_chars": 3695,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 51
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 59
+            }
+          ]
+        },
+        {
+          "query_id": "q09",
+          "query_type": "exact_detail",
+          "question": "How do you define a unique index using the EF Core Fluent API in OnModelCreating?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3725,
+          "compressed_chars": 3725,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.3333,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 34
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 33
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            }
+          ]
+        },
+        {
+          "query_id": "q10",
+          "query_type": "multi_page",
+          "question": "What are the differences between surrogate keys and natural keys?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4247,
+          "compressed_chars": 4247,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.6667,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 18
+            }
+          ]
+        },
+        {
+          "query_id": "q11",
+          "query_type": "multi_page",
+          "question": "Compare access tokens and refresh tokens in terms of purpose, lifetime, and storage.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3467,
+          "compressed_chars": 3467,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.4,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 58
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 41
+            }
+          ]
+        },
+        {
+          "query_id": "q12",
+          "query_type": "multi_page",
+          "question": "How should web applications prevent SQL injection attacks across frontend and backend layers?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3506,
+          "compressed_chars": 3506,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 53
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 7
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            }
+          ]
+        },
+        {
+          "query_id": "q13",
+          "query_type": "unanswerable",
+          "question": "How do you configure Redis cluster shard replication for session caching?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 4215,
+          "compressed_chars": 4215,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 41
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 12
+            }
+          ]
+        },
+        {
+          "query_id": "q14",
+          "query_type": "unanswerable",
+          "question": "What are the best practices for configuring Kubernetes Horizontal Pod Autoscaler?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3015,
+          "compressed_chars": 3015,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 25
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 33
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            }
+          ]
+        },
+        {
+          "query_id": "q15",
+          "query_type": "unanswerable",
+          "question": "Explain how to implement OAuth 2.0 PKCE flow with Google identity provider in Python.",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3962,
+          "compressed_chars": 3962,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 25
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 56
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            }
+          ]
+        }
+      ]
+    },
+    "C2_Hybrid_Reranked": {
+      "configuration_id": "C2_Hybrid_Reranked",
+      "description": "Hybrid retrieval + TF-IDF Reranking",
+      "queries_evaluated": 15,
+      "metrics": {
+        "hit_at_3": 0.75,
+        "hit_at_5": 0.9167,
+        "recall_at_3": 0.6667,
+        "recall_at_5": 0.7917,
+        "mrr_at_3": 0.6667,
+        "mrr_at_5": 0.7083,
+        "avg_original_chars": 3298.2,
+        "avg_compressed_chars": 3298.2,
+        "avg_context_reduction_pct": 0.0,
+        "avg_evidence_retention_rate": 1.0,
+        "avg_citation_precision": 0.2125,
+        "avg_citation_recall": 0.7917,
+        "refusal_accuracy": 1.0
+      },
+      "per_query_results": [
+        {
+          "query_id": "q01",
+          "query_type": "conceptual",
+          "question": "What is the difference between authentication and authorization?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 2919,
+          "compressed_chars": 2919,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            }
+          ]
+        },
+        {
+          "query_id": "q02",
+          "query_type": "conceptual",
+          "question": "Explain the ACID principles of Atomicity and Consistency in database transactions.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 2794,
+          "compressed_chars": 2794,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 9
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 8
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q03",
+          "query_type": "conceptual",
+          "question": "What is Second Normal Form (2NF) and what dependency does it eliminate?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 3291,
+          "compressed_chars": 3291,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 22
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            }
+          ]
+        },
+        {
+          "query_id": "q04",
+          "query_type": "technical",
+          "question": "What are the three parts of a JSON Web Token (JWT) structure?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3085,
+          "compressed_chars": 3085,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q05",
+          "query_type": "technical",
+          "question": "What is an Object-Relational Mapper (ORM) in Entity Framework Core?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3693,
+          "compressed_chars": 3693,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 32
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 16
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 35
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            }
+          ]
+        },
+        {
+          "query_id": "q06",
+          "query_type": "technical",
+          "question": "Why does a database connection pool improve application performance?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2714,
+          "compressed_chars": 2714,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q07",
+          "query_type": "exact_detail",
+          "question": "How is password storage configured in the LankaMart PostgreSQL schema?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3617,
+          "compressed_chars": 3617,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 29
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q08",
+          "query_type": "exact_detail",
+          "question": "How do you protect an ASP.NET Core controller endpoint by role in ProductsController?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3573,
+          "compressed_chars": 3573,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 51
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 2
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            }
+          ]
+        },
+        {
+          "query_id": "q09",
+          "query_type": "exact_detail",
+          "question": "How do you define a unique index using the EF Core Fluent API in OnModelCreating?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4271,
+          "compressed_chars": 4271,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 34
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 33
+            }
+          ]
+        },
+        {
+          "query_id": "q10",
+          "query_type": "multi_page",
+          "question": "What are the differences between surrogate keys and natural keys?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 3547,
+          "compressed_chars": 3547,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            }
+          ]
+        },
+        {
+          "query_id": "q11",
+          "query_type": "multi_page",
+          "question": "Compare access tokens and refresh tokens in terms of purpose, lifetime, and storage.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2818,
+          "compressed_chars": 2818,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.4,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 1
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q12",
+          "query_type": "multi_page",
+          "question": "How should web applications prevent SQL injection attacks across frontend and backend layers?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2970,
+          "compressed_chars": 2970,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 53
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 48
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            }
+          ]
+        },
+        {
+          "query_id": "q13",
+          "query_type": "unanswerable",
+          "question": "How do you configure Redis cluster shard replication for session caching?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3733,
+          "compressed_chars": 3733,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 41
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q14",
+          "query_type": "unanswerable",
+          "question": "What are the best practices for configuring Kubernetes Horizontal Pod Autoscaler?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 2715,
+          "compressed_chars": 2715,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 25
+            }
+          ]
+        },
+        {
+          "query_id": "q15",
+          "query_type": "unanswerable",
+          "question": "Explain how to implement OAuth 2.0 PKCE flow with Google identity provider in Python.",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3733,
+          "compressed_chars": 3733,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 56
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            }
+          ]
+        }
+      ]
+    },
+    "C3_Hybrid_Rerank_Expanded": {
+      "configuration_id": "C3_Hybrid_Rerank_Expanded",
+      "description": "Hybrid retrieval + TF-IDF Reranking + Query Expansion",
+      "queries_evaluated": 15,
+      "metrics": {
+        "hit_at_3": 0.75,
+        "hit_at_5": 0.75,
+        "recall_at_3": 0.6667,
+        "recall_at_5": 0.6667,
+        "mrr_at_3": 0.6667,
+        "mrr_at_5": 0.6667,
+        "avg_original_chars": 3343.7,
+        "avg_compressed_chars": 3343.7,
+        "avg_context_reduction_pct": 0.0,
+        "avg_evidence_retention_rate": 1.0,
+        "avg_citation_precision": 0.175,
+        "avg_citation_recall": 0.6667,
+        "refusal_accuracy": 1.0
+      },
+      "per_query_results": [
+        {
+          "query_id": "q01",
+          "query_type": "conceptual",
+          "question": "What is the difference between authentication and authorization?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 2929,
+          "compressed_chars": 2929,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            }
+          ]
+        },
+        {
+          "query_id": "q02",
+          "query_type": "conceptual",
+          "question": "Explain the ACID principles of Atomicity and Consistency in database transactions.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 2794,
+          "compressed_chars": 2794,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 9
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 8
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q03",
+          "query_type": "conceptual",
+          "question": "What is Second Normal Form (2NF) and what dependency does it eliminate?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 3520,
+          "compressed_chars": 3520,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 22
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            }
+          ]
+        },
+        {
+          "query_id": "q04",
+          "query_type": "technical",
+          "question": "What are the three parts of a JSON Web Token (JWT) structure?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3085,
+          "compressed_chars": 3085,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q05",
+          "query_type": "technical",
+          "question": "What is an Object-Relational Mapper (ORM) in Entity Framework Core?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4414,
+          "compressed_chars": 4414,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 32
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 16
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 35
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            }
+          ]
+        },
+        {
+          "query_id": "q06",
+          "query_type": "technical",
+          "question": "Why does a database connection pool improve application performance?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2714,
+          "compressed_chars": 2714,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q07",
+          "query_type": "exact_detail",
+          "question": "How is password storage configured in the LankaMart PostgreSQL schema?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3617,
+          "compressed_chars": 3617,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 29
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q08",
+          "query_type": "exact_detail",
+          "question": "How do you protect an ASP.NET Core controller endpoint by role in ProductsController?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4002,
+          "compressed_chars": 4002,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 51
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 2
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            }
+          ]
+        },
+        {
+          "query_id": "q09",
+          "query_type": "exact_detail",
+          "question": "How do you define a unique index using the EF Core Fluent API in OnModelCreating?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4271,
+          "compressed_chars": 4271,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 34
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 33
+            }
+          ]
+        },
+        {
+          "query_id": "q10",
+          "query_type": "multi_page",
+          "question": "What are the differences between surrogate keys and natural keys?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3133,
+          "compressed_chars": 3133,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q11",
+          "query_type": "multi_page",
+          "question": "Compare access tokens and refresh tokens in terms of purpose, lifetime, and storage.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2921,
+          "compressed_chars": 2921,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.4,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 1
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 14
+            }
+          ]
+        },
+        {
+          "query_id": "q12",
+          "query_type": "multi_page",
+          "question": "How should web applications prevent SQL injection attacks across frontend and backend layers?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2970,
+          "compressed_chars": 2970,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 53
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 48
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            }
+          ]
+        },
+        {
+          "query_id": "q13",
+          "query_type": "unanswerable",
+          "question": "How do you configure Redis cluster shard replication for session caching?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 2810,
+          "compressed_chars": 2810,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            }
+          ]
+        },
+        {
+          "query_id": "q14",
+          "query_type": "unanswerable",
+          "question": "What are the best practices for configuring Kubernetes Horizontal Pod Autoscaler?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 2715,
+          "compressed_chars": 2715,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 25
+            }
+          ]
+        },
+        {
+          "query_id": "q15",
+          "query_type": "unanswerable",
+          "question": "Explain how to implement OAuth 2.0 PKCE flow with Google identity provider in Python.",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 4260,
+          "compressed_chars": 4260,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 35
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 56
+            }
+          ]
+        }
+      ]
+    },
+    "C4_Hybrid_Rerank_ParentChild": {
+      "configuration_id": "C4_Hybrid_Rerank_ParentChild",
+      "description": "Hybrid + TF-IDF Reranking + Parent Context Resolution",
+      "queries_evaluated": 15,
+      "metrics": {
+        "hit_at_3": 0.75,
+        "hit_at_5": 0.9167,
+        "recall_at_3": 0.6667,
+        "recall_at_5": 0.7917,
+        "mrr_at_3": 0.6667,
+        "mrr_at_5": 0.7083,
+        "avg_original_chars": 3298.2,
+        "avg_compressed_chars": 3298.2,
+        "avg_context_reduction_pct": 0.0,
+        "avg_evidence_retention_rate": 1.0,
+        "avg_citation_precision": 0.2125,
+        "avg_citation_recall": 0.7917,
+        "refusal_accuracy": 1.0
+      },
+      "per_query_results": [
+        {
+          "query_id": "q01",
+          "query_type": "conceptual",
+          "question": "What is the difference between authentication and authorization?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 2919,
+          "compressed_chars": 2919,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            }
+          ]
+        },
+        {
+          "query_id": "q02",
+          "query_type": "conceptual",
+          "question": "Explain the ACID principles of Atomicity and Consistency in database transactions.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 2794,
+          "compressed_chars": 2794,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 9
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 8
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q03",
+          "query_type": "conceptual",
+          "question": "What is Second Normal Form (2NF) and what dependency does it eliminate?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 3291,
+          "compressed_chars": 3291,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 22
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            }
+          ]
+        },
+        {
+          "query_id": "q04",
+          "query_type": "technical",
+          "question": "What are the three parts of a JSON Web Token (JWT) structure?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3085,
+          "compressed_chars": 3085,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q05",
+          "query_type": "technical",
+          "question": "What is an Object-Relational Mapper (ORM) in Entity Framework Core?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3693,
+          "compressed_chars": 3693,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 32
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 16
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 35
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            }
+          ]
+        },
+        {
+          "query_id": "q06",
+          "query_type": "technical",
+          "question": "Why does a database connection pool improve application performance?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2714,
+          "compressed_chars": 2714,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q07",
+          "query_type": "exact_detail",
+          "question": "How is password storage configured in the LankaMart PostgreSQL schema?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3617,
+          "compressed_chars": 3617,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 29
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q08",
+          "query_type": "exact_detail",
+          "question": "How do you protect an ASP.NET Core controller endpoint by role in ProductsController?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3573,
+          "compressed_chars": 3573,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 51
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 2
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            }
+          ]
+        },
+        {
+          "query_id": "q09",
+          "query_type": "exact_detail",
+          "question": "How do you define a unique index using the EF Core Fluent API in OnModelCreating?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4271,
+          "compressed_chars": 4271,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 34
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 33
+            }
+          ]
+        },
+        {
+          "query_id": "q10",
+          "query_type": "multi_page",
+          "question": "What are the differences between surrogate keys and natural keys?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 3547,
+          "compressed_chars": 3547,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.25,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            }
+          ]
+        },
+        {
+          "query_id": "q11",
+          "query_type": "multi_page",
+          "question": "Compare access tokens and refresh tokens in terms of purpose, lifetime, and storage.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2818,
+          "compressed_chars": 2818,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.4,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 1
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q12",
+          "query_type": "multi_page",
+          "question": "How should web applications prevent SQL injection attacks across frontend and backend layers?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2970,
+          "compressed_chars": 2970,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 53
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 48
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            }
+          ]
+        },
+        {
+          "query_id": "q13",
+          "query_type": "unanswerable",
+          "question": "How do you configure Redis cluster shard replication for session caching?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3733,
+          "compressed_chars": 3733,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 41
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q14",
+          "query_type": "unanswerable",
+          "question": "What are the best practices for configuring Kubernetes Horizontal Pod Autoscaler?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 2715,
+          "compressed_chars": 2715,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 25
+            }
+          ]
+        },
+        {
+          "query_id": "q15",
+          "query_type": "unanswerable",
+          "question": "Explain how to implement OAuth 2.0 PKCE flow with Google identity provider in Python.",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3733,
+          "compressed_chars": 3733,
+          "context_reduction_pct": 0.0,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 56
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            }
+          ]
+        }
+      ]
+    },
+    "C5_Full_Advanced_RAG": {
+      "configuration_id": "C5_Full_Advanced_RAG",
+      "description": "Full pipeline: Hybrid + Reranking + Parent/Child + Context Compression",
+      "queries_evaluated": 15,
+      "metrics": {
+        "hit_at_3": 0.75,
+        "hit_at_5": 0.9167,
+        "recall_at_3": 0.6667,
+        "recall_at_5": 0.7917,
+        "mrr_at_3": 0.6667,
+        "mrr_at_5": 0.7083,
+        "avg_original_chars": 3298.2,
+        "avg_compressed_chars": 973.1,
+        "avg_context_reduction_pct": 70.32,
+        "avg_evidence_retention_rate": 0.6111,
+        "avg_citation_precision": 0.2125,
+        "avg_citation_recall": 0.7917,
+        "refusal_accuracy": 1.0
+      },
+      "per_query_results": [
+        {
+          "query_id": "q01",
+          "query_type": "conceptual",
+          "question": "What is the difference between authentication and authorization?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 2919,
+          "compressed_chars": 1087,
+          "context_reduction_pct": 62.76,
+          "evidence_retention_rate": 0.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            }
+          ]
+        },
+        {
+          "query_id": "q02",
+          "query_type": "conceptual",
+          "question": "Explain the ACID principles of Atomicity and Consistency in database transactions.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 2794,
+          "compressed_chars": 612,
+          "context_reduction_pct": 78.1,
+          "evidence_retention_rate": 0.5,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 9
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 8
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q03",
+          "query_type": "conceptual",
+          "question": "What is Second Normal Form (2NF) and what dependency does it eliminate?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "original_chars": 3291,
+          "compressed_chars": 1528,
+          "context_reduction_pct": 53.57,
+          "evidence_retention_rate": 0.5,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 27
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 22
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            }
+          ]
+        },
+        {
+          "query_id": "q04",
+          "query_type": "technical",
+          "question": "What are the three parts of a JSON Web Token (JWT) structure?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3085,
+          "compressed_chars": 995,
+          "context_reduction_pct": 67.75,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 43
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 57
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q05",
+          "query_type": "technical",
+          "question": "What is an Object-Relational Mapper (ORM) in Entity Framework Core?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3693,
+          "compressed_chars": 843,
+          "context_reduction_pct": 77.17,
+          "evidence_retention_rate": 0.6667,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 32
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 16
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 35
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            }
+          ]
+        },
+        {
+          "query_id": "q06",
+          "query_type": "technical",
+          "question": "Why does a database connection pool improve application performance?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2714,
+          "compressed_chars": 943,
+          "context_reduction_pct": 65.25,
+          "evidence_retention_rate": 0.6667,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 38
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 6
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q07",
+          "query_type": "exact_detail",
+          "question": "How is password storage configured in the LankaMart PostgreSQL schema?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3617,
+          "compressed_chars": 1383,
+          "context_reduction_pct": 61.76,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 29
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q08",
+          "query_type": "exact_detail",
+          "question": "How do you protect an ASP.NET Core controller endpoint by role in ProductsController?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 3573,
+          "compressed_chars": 715,
+          "context_reduction_pct": 79.99,
+          "evidence_retention_rate": 0.3333,
+          "citation_precision": 0.2,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 51
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 2
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            }
+          ]
+        },
+        {
+          "query_id": "q09",
+          "query_type": "exact_detail",
+          "question": "How do you define a unique index using the EF Core Fluent API in OnModelCreating?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 4271,
+          "compressed_chars": 1365,
+          "context_reduction_pct": 68.04,
+          "evidence_retention_rate": 0.6667,
+          "citation_precision": 0.25,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 34
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 37
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 33
+            }
+          ]
+        },
+        {
+          "query_id": "q10",
+          "query_type": "multi_page",
+          "question": "What are the differences between surrogate keys and natural keys?",
+          "unanswerable": false,
+          "hit_at_3": 0.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "original_chars": 3547,
+          "compressed_chars": 1407,
+          "context_reduction_pct": 60.33,
+          "evidence_retention_rate": 0.6667,
+          "citation_precision": 0.25,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 11
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 19
+            }
+          ]
+        },
+        {
+          "query_id": "q11",
+          "query_type": "multi_page",
+          "question": "Compare access tokens and refresh tokens in terms of purpose, lifetime, and storage.",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2818,
+          "compressed_chars": 834,
+          "context_reduction_pct": 70.4,
+          "evidence_retention_rate": 0.6667,
+          "citation_precision": 0.4,
+          "citation_recall": 1.0,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 39
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 44
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 1
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 4
+            }
+          ]
+        },
+        {
+          "query_id": "q12",
+          "query_type": "multi_page",
+          "question": "How should web applications prevent SQL injection attacks across frontend and backend layers?",
+          "unanswerable": false,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 0.5,
+          "recall_at_5": 0.5,
+          "mrr_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "original_chars": 2970,
+          "compressed_chars": 670,
+          "context_reduction_pct": 77.44,
+          "evidence_retention_rate": 0.6667,
+          "citation_precision": 0.2,
+          "citation_recall": 0.5,
+          "refusal_accuracy": null,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 53
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 48
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 28
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 31
+            }
+          ]
+        },
+        {
+          "query_id": "q13",
+          "query_type": "unanswerable",
+          "question": "How do you configure Redis cluster shard replication for session caching?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3733,
+          "compressed_chars": 691,
+          "context_reduction_pct": 81.49,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 41
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            }
+          ]
+        },
+        {
+          "query_id": "q14",
+          "query_type": "unanswerable",
+          "question": "What are the best practices for configuring Kubernetes Horizontal Pod Autoscaler?",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 2715,
+          "compressed_chars": 841,
+          "context_reduction_pct": 69.02,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 15
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 47
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 3
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 25
+            }
+          ]
+        },
+        {
+          "query_id": "q15",
+          "query_type": "unanswerable",
+          "question": "Explain how to implement OAuth 2.0 PKCE flow with Google identity provider in Python.",
+          "unanswerable": true,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "original_chars": 3733,
+          "compressed_chars": 683,
+          "context_reduction_pct": 81.7,
+          "evidence_retention_rate": 1.0,
+          "citation_precision": 0.0,
+          "citation_recall": 0.0,
+          "refusal_accuracy": 1.0,
+          "retrieved_sources": [
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 42
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 26
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 56
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 45
+            },
+            {
+              "source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+              "page": 40
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

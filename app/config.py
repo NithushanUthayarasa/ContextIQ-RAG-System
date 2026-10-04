@@ -64,7 +64,7 @@ DEFAULT_PARENT_CHUNK_OVERLAP = int(os.getenv("DEFAULT_PARENT_CHUNK_OVERLAP", 200
 CONTEXT_COMPRESSION_ENABLED = os.getenv("CONTEXT_COMPRESSION_ENABLED", "false").strip().lower() in ("true", "1", "yes")
 
 try:
-    _comp_max_sent = int(os.getenv("COMPRESSION_MAX_SENTENCES", "5"))
+    _comp_max_sent = int(os.getenv("COMPRESSION_MAX_SENTENCES", "7"))
     if _comp_max_sent < 1:
         raise ValueError
     COMPRESSION_MAX_SENTENCES = _comp_max_sent
@@ -72,7 +72,7 @@ except Exception:
     raise ValueError("COMPRESSION_MAX_SENTENCES must be an integer >= 1")
 
 try:
-    _comp_sim_thresh = float(os.getenv("COMPRESSION_SIMILARITY_THRESHOLD", "0.10"))
+    _comp_sim_thresh = float(os.getenv("COMPRESSION_SIMILARITY_THRESHOLD", "0.05"))
     if not (0.0 <= _comp_sim_thresh <= 1.0):
         raise ValueError
     COMPRESSION_SIMILARITY_THRESHOLD = _comp_sim_thresh

@@ -224,12 +224,14 @@ class RAGPipeline:
             if cid in seen_ids:
                 prev = seen_ids[cid]
                 better = False
-                if hasattr(chunk, "distance") and hasattr(prev, "distance"):
+                if chunk.distance is not None and prev.distance is not None:
                     better = chunk.distance < prev.distance
-                elif hasattr(chunk, "cosine_similarity") and hasattr(prev, "cosine_similarity"):
+                elif chunk.cosine_similarity is not None and prev.cosine_similarity is not None:
                     better = chunk.cosine_similarity > prev.cosine_similarity
-                elif hasattr(chunk, "bm25_score") and hasattr(prev, "bm25_score"):
+                elif getattr(chunk, "bm25_score", None) is not None and getattr(prev, "bm25_score", None) is not None:
                     better = chunk.bm25_score > prev.bm25_score
+                elif getattr(chunk, "rrf_score", None) is not None and getattr(prev, "rrf_score", None) is not None:
+                    better = chunk.rrf_score > prev.rrf_score
                 if better:
                     seen_ids[cid] = chunk
             else:

@@ -8,7 +8,7 @@ Architecture position:
     Retriever → Reranker → Parent Resolution → Compressor → Generator
 
 Key properties:
-- Extractive: Only retains original sentences from retrieved chunks; never hallucinates.
+- Extractive: Selects verbatim sentences strictly from retrieved chunks rather than generating new text.
 - Deterministic: Zero external API calls, pure Python token scoring, 100% reproducible.
 - Preserves Order: Selected sentences are re-sorted by their original chronological
   occurrence to preserve narrative and syntactic coherence.

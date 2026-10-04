@@ -1,0 +1,184 @@
+[
+  {
+    "id": "q01",
+    "query_type": "conceptual",
+    "question": "What is the difference between authentication and authorization?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [40],
+    "expected_evidence": [
+      "Who are you",
+      "What may you do",
+      "401 Unauthorized"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q02",
+    "query_type": "conceptual",
+    "question": "Explain the ACID principles of Atomicity and Consistency in database transactions.",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [9, 10],
+    "expected_evidence": [
+      "All or nothing",
+      "Preserve database invariants",
+      "single unit"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q03",
+    "query_type": "conceptual",
+    "question": "What is Second Normal Form (2NF) and what dependency does it eliminate?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [22],
+    "expected_evidence": [
+      "no partial dependency",
+      "composite primary keys"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q04",
+    "query_type": "technical",
+    "question": "What are the three parts of a JSON Web Token (JWT) structure?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [43],
+    "expected_evidence": [
+      "header",
+      "payload",
+      "signature"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q05",
+    "query_type": "technical",
+    "question": "What is an Object-Relational Mapper (ORM) in Entity Framework Core?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [31],
+    "expected_evidence": [
+      "Object-Relational Mapper",
+      "classes and objects",
+      "Npgsql"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q06",
+    "query_type": "technical",
+    "question": "Why does a database connection pool improve application performance?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [38],
+    "expected_evidence": [
+      "connection pool",
+      "ready for reuse",
+      "creating a new connection"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q07",
+    "query_type": "exact_detail",
+    "question": "How is password storage configured in the LankaMart PostgreSQL schema?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [26],
+    "expected_evidence": [
+      "password_hash",
+      "VARCHAR(255)",
+      "UNIQUE email"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q08",
+    "query_type": "exact_detail",
+    "question": "How do you protect an ASP.NET Core controller endpoint by role in ProductsController?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [51],
+    "expected_evidence": [
+      "Authorize(Roles",
+      "ProductsController",
+      "Staff,Admin"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q09",
+    "query_type": "exact_detail",
+    "question": "How do you define a unique index using the EF Core Fluent API in OnModelCreating?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [34],
+    "expected_evidence": [
+      "OnModelCreating",
+      "HasIndex",
+      "IsUnique"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q10",
+    "query_type": "multi_page",
+    "question": "What are the differences between surrogate keys and natural keys?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [18, 19],
+    "expected_evidence": [
+      "SURROGATE KEY",
+      "System-generated",
+      "Auto-Increment"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q11",
+    "query_type": "multi_page",
+    "question": "Compare access tokens and refresh tokens in terms of purpose, lifetime, and storage.",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [44, 45],
+    "expected_evidence": [
+      "Access token",
+      "Refresh token",
+      "15–60 minutes"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q12",
+    "query_type": "multi_page",
+    "question": "How should web applications prevent SQL injection attacks across frontend and backend layers?",
+    "expected_source": "SE3090 Lecture 04 Database Auth Integration.pdf",
+    "expected_pages": [53, 54],
+    "expected_evidence": [
+      "parameterized",
+      "Validate on BOTH",
+      "SQL Injection"
+    ],
+    "unanswerable": false
+  },
+  {
+    "id": "q13",
+    "query_type": "unanswerable",
+    "question": "How do you configure Redis cluster shard replication for session caching?",
+    "expected_source": null,
+    "expected_pages": [],
+    "expected_evidence": [],
+    "unanswerable": true
+  },
+  {
+    "id": "q14",
+    "query_type": "unanswerable",
+    "question": "What are the best practices for configuring Kubernetes Horizontal Pod Autoscaler?",
+    "expected_source": null,
+    "expected_pages": [],
+    "expected_evidence": [],
+    "unanswerable": true
+  },
+  {
+    "id": "q15",
+    "query_type": "unanswerable",
+    "question": "Explain how to implement OAuth 2.0 PKCE flow with Google identity provider in Python.",
+    "expected_source": null,
+    "expected_pages": [],
+    "expected_evidence": [],
+    "unanswerable": true
+  }
+]
