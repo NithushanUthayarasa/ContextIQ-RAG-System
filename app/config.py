@@ -60,6 +60,34 @@ PARENT_CHILD_ENABLED = os.getenv("PARENT_CHILD_ENABLED", "false").strip().lower(
 DEFAULT_PARENT_CHUNK_SIZE = int(os.getenv("DEFAULT_PARENT_CHUNK_SIZE", 2000))
 DEFAULT_PARENT_CHUNK_OVERLAP = int(os.getenv("DEFAULT_PARENT_CHUNK_OVERLAP", 200))
 
+# Context Compression Configuration
+CONTEXT_COMPRESSION_ENABLED = os.getenv("CONTEXT_COMPRESSION_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+
+try:
+    _comp_max_sent = int(os.getenv("COMPRESSION_MAX_SENTENCES", "5"))
+    if _comp_max_sent < 1:
+        raise ValueError
+    COMPRESSION_MAX_SENTENCES = _comp_max_sent
+except Exception:
+    raise ValueError("COMPRESSION_MAX_SENTENCES must be an integer >= 1")
+
+try:
+    _comp_sim_thresh = float(os.getenv("COMPRESSION_SIMILARITY_THRESHOLD", "0.10"))
+    if not (0.0 <= _comp_sim_thresh <= 1.0):
+        raise ValueError
+    COMPRESSION_SIMILARITY_THRESHOLD = _comp_sim_thresh
+except Exception:
+    raise ValueError("COMPRESSION_SIMILARITY_THRESHOLD must be a float between 0.0 and 1.0")
+
+try:
+    _comp_min_len = int(os.getenv("COMPRESSION_MIN_SENTENCE_LEN", "15"))
+    if _comp_min_len < 1:
+        raise ValueError
+    COMPRESSION_MIN_SENTENCE_LEN = _comp_min_len
+except Exception:
+    raise ValueError("COMPRESSION_MIN_SENTENCE_LEN must be an integer >= 1")
+
+
 # Storage Directories
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"

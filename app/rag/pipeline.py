@@ -17,7 +17,11 @@ The rewritten retrieval query is used for both retrieval and reranking.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from app.config import PARENT_CHILD_ENABLED, QUERY_EXPANSION_MAX_QUERIES
+from app.config import (
+    CONTEXT_COMPRESSION_ENABLED,
+    PARENT_CHILD_ENABLED,
+    QUERY_EXPANSION_MAX_QUERIES,
+)
 from app.generation.generator import GeminiGenerator, EmptyQuestionError
 from app.retrieval.parent_context import resolve_parent_context
 from app.retrieval.retriever import RetrievedChunk, Retriever
@@ -49,6 +53,10 @@ class RAGResponse:
     parent_child_enabled: bool = False
     child_chunks_retrieved: Optional[int] = None
     parent_contexts_used: Optional[int] = None
+    # Context compression transparency fields
+    context_compression_enabled: bool = False
+    total_chars_original: Optional[int] = None
+    total_chars_compressed: Optional[int] = None
 
     def __post_init__(self):
         if self.retrieval_query is None:
@@ -74,6 +82,8 @@ class RAGPipeline:
         query_expander: Optional[Any] = None,
         parent_store: Optional[Any] = None,
         parent_child_enabled: bool = PARENT_CHILD_ENABLED,
+        compressor: Optional[Any] = None,
+        context_compression_enabled: bool = CONTEXT_COMPRESSION_ENABLED,
     ):
         if retriever is None:
             raise RAGPipelineError("A valid Retriever instance must be provided.")
@@ -88,6 +98,8 @@ class RAGPipeline:
         self.query_expander = query_expander
         self.parent_store = parent_store
         self.parent_child_enabled = bool(parent_child_enabled)
+        self.compressor = compressor
+        self.context_compression_enabled = bool(context_compression_enabled)
 
     @staticmethod
     def extract_sources(chunks: List[RetrievedChunk]) -> List[Dict[str, Any]]:
@@ -119,6 +131,7 @@ class RAGPipeline:
         document_ids: Optional[List[str]] = None,
         retrieval_mode: Optional[str] = None,
         parent_child_enabled: Optional[bool] = None,
+        context_compression_enabled: Optional[bool] = None,
     ) -> RAGResponse:
         """
         Executes the end-to-end RAG pipeline for a user question.
@@ -251,6 +264,27 @@ class RAGPipeline:
             final_chunks = reranked_chunks
             parent_contexts_used = None
 
+        # Step 6: Context Compression (optional)
+        is_compression = (
+            context_compression_enabled
+            if context_compression_enabled is not None
+            else self.context_compression_enabled
+        )
+
+        total_chars_original: Optional[int] = None
+        total_chars_compressed: Optional[int] = None
+
+        if is_compression and self.compressor is not None and final_chunks:
+            total_chars_original = sum(len(c.text) for c in final_chunks)
+            final_chunks = self.compressor.compress(
+                query=retrieval_query,
+                chunks=final_chunks,
+            )
+            total_chars_compressed = sum(len(c.text) for c in final_chunks)
+        elif is_compression and final_chunks:
+            total_chars_original = sum(len(c.text) for c in final_chunks)
+            total_chars_compressed = total_chars_original
+
         # Source deduplication and generation
         sources = self.extract_sources(final_chunks)
         answer = self.generator.generate(
@@ -286,4 +320,7 @@ class RAGPipeline:
             parent_child_enabled=is_parent_child,
             child_chunks_retrieved=child_chunks_retrieved,
             parent_contexts_used=parent_contexts_used,
+            context_compression_enabled=bool(is_compression),
+            total_chars_original=total_chars_original,
+            total_chars_compressed=total_chars_compressed,
         )

@@ -45,6 +45,12 @@ class RetrievalResult:
     parent_id: Optional[str] = None
     parent_index: Optional[int] = None
     original_child_id: Optional[str] = None
+    # Context compression metadata — populated by a ContextCompressor
+    original_text: Optional[str] = None
+    compression_ratio: Optional[float] = None
+    sentences_kept: Optional[int] = None
+    sentences_total: Optional[int] = None
+
 
     @property
     def cosine_similarity(self) -> Optional[float]:

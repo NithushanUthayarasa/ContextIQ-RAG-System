@@ -44,6 +44,10 @@ class ChatMessage:
     parent_child_enabled: bool = False
     child_chunks_retrieved: Optional[int] = None
     parent_contexts_used: Optional[int] = None
+    # Context compression metadata
+    context_compression_enabled: bool = False
+    total_chars_original: Optional[int] = None
+    total_chars_compressed: Optional[int] = None
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -84,6 +88,9 @@ class Conversation:
         parent_child_enabled: bool = False,
         child_chunks_retrieved: Optional[int] = None,
         parent_contexts_used: Optional[int] = None,
+        context_compression_enabled: bool = False,
+        total_chars_original: Optional[int] = None,
+        total_chars_compressed: Optional[int] = None,
     ) -> ChatMessage:
         """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
         msg = ChatMessage(
@@ -102,6 +109,9 @@ class Conversation:
             parent_child_enabled=parent_child_enabled,
             child_chunks_retrieved=child_chunks_retrieved,
             parent_contexts_used=parent_contexts_used,
+            context_compression_enabled=context_compression_enabled,
+            total_chars_original=total_chars_original,
+            total_chars_compressed=total_chars_compressed,
         )
         self.messages.append(msg)
         return msg

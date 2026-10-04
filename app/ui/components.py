@@ -277,6 +277,17 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         )
         st.session_state["parent_child_enabled"] = parent_child_enabled
 
+        # Context Compression Toggle
+        context_compression_enabled = st.toggle(
+            "⚡ Enable Context Compression",
+            value=st.session_state.get("context_compression_enabled", False),
+            help=(
+                "When enabled, an extractive compressor removes irrelevant sentences "
+                "from retrieved chunks before generating the answer, reducing prompt size."
+            ),
+        )
+        st.session_state["context_compression_enabled"] = context_compression_enabled
+
         st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
         st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
 
@@ -290,6 +301,7 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
         "reranker_enabled": reranker_enabled,
         "query_expansion_enabled": query_expansion_enabled,
         "parent_child_enabled": parent_child_enabled,
+        "context_compression_enabled": context_compression_enabled,
     }
 
 
@@ -316,6 +328,9 @@ def render_retrieved_context(
     parent_child_enabled: bool = False,
     child_chunks_retrieved: Optional[int] = None,
     parent_contexts_used: Optional[int] = None,
+    context_compression_enabled: bool = False,
+    total_chars_original: Optional[int] = None,
+    total_chars_compressed: Optional[int] = None,
 ):
     """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
     if not retrieved_chunks:
@@ -352,6 +367,17 @@ def render_retrieved_context(
         else:
             st.caption("**Parent/Child Retrieval:** Disabled")
 
+        # Context Compression transparency
+        if context_compression_enabled:
+            reduction_str = ""
+            if total_chars_original is not None and total_chars_compressed is not None:
+                saved = total_chars_original - total_chars_compressed
+                pct = (saved / total_chars_original) * 100 if total_chars_original > 0 else 0
+                reduction_str = f" | Chars: {total_chars_original} → {total_chars_compressed} ({pct:.1f}% reduced)"
+            st.caption(f"**Context Compression:** Enabled (Extractive){reduction_str}")
+        else:
+            st.caption("**Context Compression:** Disabled")
+
         if document_ids:
             st.caption(f"**Search Scope:** Filtered to {len(document_ids)} selected document(s)")
         else:
@@ -378,6 +404,12 @@ def render_retrieved_context(
                 if getattr(chunk, "original_child_id", None)
                 else ""
             )
+            comp_badge = ""
+            if getattr(chunk, "compression_ratio", None) is not None:
+                kept = getattr(chunk, "sentences_kept", "?")
+                tot = getattr(chunk, "sentences_total", "?")
+                ratio_pct = f"{chunk.compression_ratio * 100:.1f}%"
+                comp_badge = f" | <strong>Compressed:</strong> <code>{ratio_pct}</code> ({kept}/{tot} sents)"
 
             metric_parts = []
             if getattr(chunk, "retrieval_method", None):
@@ -400,7 +432,7 @@ def render_retrieved_context(
                 f"""
                 <div class="chunk-container">
                     <div class="chunk-meta">
-                        <span><strong>Context #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Index {chunk.chunk_index}){doc_badge}{parent_badge}{child_badge}</span>
+                        <span><strong>Context #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Index {chunk.chunk_index}){doc_badge}{parent_badge}{child_badge}{comp_badge}</span>
                         <span>{metrics_html}</span>
                     </div>
                     <div class="chunk-text">{chunk.text}</div>

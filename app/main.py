@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 import streamlit as st
 
 from app.config import (
+    CONTEXT_COMPRESSION_ENABLED,
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_MIN_SIMILARITY,
@@ -38,6 +39,7 @@ from app.rag.pipeline import RAGPipeline, RAGPipelineError
 from app.rag.query_rewriter import QueryRewriter
 from app.retrieval.retriever import Retriever, RetrieverError
 from app.retrieval.reranker import TFIDFReranker
+from app.retrieval.compressor import ExtractiveContextCompressor
 from app.rag.query_expander import GeminiQueryExpander
 from app.ui.components import (
     apply_custom_styles,
@@ -132,6 +134,7 @@ def handle_chat_turn(
     document_ids: Optional[List[str]] = None,
     retrieval_mode: Optional[str] = None,
     parent_child_enabled: Optional[bool] = None,
+    context_compression_enabled: Optional[bool] = None,
 ) -> RAGResponse:
     """
     Executes a single conversational RAG turn.
@@ -152,6 +155,8 @@ def handle_chat_turn(
         ask_kwargs["retrieval_mode"] = retrieval_mode
     if parent_child_enabled is not None:
         ask_kwargs["parent_child_enabled"] = parent_child_enabled
+    if context_compression_enabled is not None:
+        ask_kwargs["context_compression_enabled"] = context_compression_enabled
 
     response = pipeline.ask(cleaned_query, **ask_kwargs)
     conversation.add_user_message(cleaned_query)
@@ -170,6 +175,9 @@ def handle_chat_turn(
         parent_child_enabled=getattr(response, "parent_child_enabled", False),
         child_chunks_retrieved=getattr(response, "child_chunks_retrieved", None),
         parent_contexts_used=getattr(response, "parent_contexts_used", None),
+        context_compression_enabled=getattr(response, "context_compression_enabled", False),
+        total_chars_original=getattr(response, "total_chars_original", None),
+        total_chars_compressed=getattr(response, "total_chars_compressed", None),
     )
     return response
 
@@ -243,6 +251,8 @@ def main():
         st.session_state["query_expansion_enabled"] = QUERY_EXPANSION_ENABLED
     if "parent_child_enabled" not in st.session_state:
         st.session_state["parent_child_enabled"] = PARENT_CHILD_ENABLED
+    if "context_compression_enabled" not in st.session_state:
+        st.session_state["context_compression_enabled"] = CONTEXT_COMPRESSION_ENABLED
 
     # Render Sidebar with System Metrics and Hyperparameters
     config = render_sidebar(vector_store)
@@ -389,6 +399,9 @@ def main():
                             parent_child_enabled=getattr(msg, "parent_child_enabled", False),
                             child_chunks_retrieved=getattr(msg, "child_chunks_retrieved", None),
                             parent_contexts_used=getattr(msg, "parent_contexts_used", None),
+                            context_compression_enabled=getattr(msg, "context_compression_enabled", False),
+                            total_chars_original=getattr(msg, "total_chars_original", None),
+                            total_chars_compressed=getattr(msg, "total_chars_compressed", None),
                         )
 
     # 2. Chat Input Interaction
@@ -420,6 +433,11 @@ def main():
                     )
                     reranker = TFIDFReranker() if config.get("reranker_enabled") else None
                     query_expander = GeminiQueryExpander() if config.get("query_expansion_enabled") else None
+                    compressor = (
+                        ExtractiveContextCompressor()
+                        if config.get("context_compression_enabled")
+                        else None
+                    )
                     pipeline = RAGPipeline(
                         retriever=retriever,
                         generator=generator,
@@ -429,6 +447,8 @@ def main():
                         query_expander=query_expander,
                         parent_store=vector_store,
                         parent_child_enabled=config.get("parent_child_enabled", PARENT_CHILD_ENABLED),
+                        compressor=compressor,
+                        context_compression_enabled=config.get("context_compression_enabled", CONTEXT_COMPRESSION_ENABLED),
                     )
                     response = handle_chat_turn(
                         query=user_query,
@@ -439,6 +459,7 @@ def main():
                         document_ids=config.get("document_ids"),
                         retrieval_mode=config.get("retrieval_mode"),
                         parent_child_enabled=config.get("parent_child_enabled", PARENT_CHILD_ENABLED),
+                        context_compression_enabled=config.get("context_compression_enabled", CONTEXT_COMPRESSION_ENABLED),
                     )
                     st.session_state["last_response"] = response
 
@@ -462,6 +483,9 @@ def main():
                         parent_child_enabled=getattr(response, "parent_child_enabled", False),
                         child_chunks_retrieved=getattr(response, "child_chunks_retrieved", None),
                         parent_contexts_used=getattr(response, "parent_contexts_used", None),
+                        context_compression_enabled=getattr(response, "context_compression_enabled", False),
+                        total_chars_original=getattr(response, "total_chars_original", None),
+                        total_chars_compressed=getattr(response, "total_chars_compressed", None),
                     )
 
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
