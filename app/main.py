@@ -44,10 +44,12 @@ from app.rag.query_expander import GeminiQueryExpander
 from app.ui.components import (
     apply_custom_styles,
     render_header,
+    render_performance_metrics,
     render_retrieved_context,
     render_sidebar,
     render_sources,
 )
+from app.ui.eval_dashboard import render_evaluation_dashboard
 from app.vectorstore.chroma_store import ChromaVectorStore, VectorStoreError
 
 
@@ -178,6 +180,7 @@ def handle_chat_turn(
         context_compression_enabled=getattr(response, "context_compression_enabled", False),
         total_chars_original=getattr(response, "total_chars_original", None),
         total_chars_compressed=getattr(response, "total_chars_compressed", None),
+        timings=getattr(response, "timings", None),
     )
     return response
 
@@ -206,57 +209,10 @@ def get_query_rewriter() -> Optional[QueryRewriter]:
         return None
 
 
-def main():
-    st.set_page_config(
-        page_title="ContextIQ — Document Intelligence",
-        page_icon="🧠",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
-
-    apply_custom_styles()
-    render_header()
-
-    # Verify API configuration
-    if not is_api_key_configured():
-        st.error(
-            "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your `.env` file to enable embeddings and generation."
-        )
-
-    # Initialize Vector Store
-    try:
-        vector_store = get_vector_store()
-    except Exception as e:
-        st.error(f"Failed to initialize vector database: {str(e)}")
-        vector_store = None
-
-    # Maintain Session State defaults
-    if "current_document" not in st.session_state:
-        st.session_state["current_document"] = None
-    if "current_pages" not in st.session_state:
-        st.session_state["current_pages"] = 0
-    if "last_response" not in st.session_state:
-        st.session_state["last_response"] = None
-    if "deleting_doc_id" not in st.session_state:
-        st.session_state["deleting_doc_id"] = None
-    if "conversation" not in st.session_state:
-        st.session_state["conversation"] = Conversation()
-    if "min_similarity" not in st.session_state:
-        st.session_state["min_similarity"] = DEFAULT_MIN_SIMILARITY
-    if "retrieval_mode" not in st.session_state:
-        st.session_state["retrieval_mode"] = DEFAULT_RETRIEVAL_MODE
-    if "reranker_enabled" not in st.session_state:
-        st.session_state["reranker_enabled"] = RERANKER_ENABLED
-    if "query_expansion_enabled" not in st.session_state:
-        st.session_state["query_expansion_enabled"] = QUERY_EXPANSION_ENABLED
-    if "parent_child_enabled" not in st.session_state:
-        st.session_state["parent_child_enabled"] = PARENT_CHILD_ENABLED
-    if "context_compression_enabled" not in st.session_state:
-        st.session_state["context_compression_enabled"] = CONTEXT_COMPRESSION_ENABLED
-
-    # Render Sidebar with System Metrics and Hyperparameters
-    config = render_sidebar(vector_store)
-
+def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str, Any]):
+    """
+    Renders document ingestion, conversation history, and chat interaction interface.
+    """
     # ==========================================
     # SECTION 1: Document Upload & Indexing
     # ==========================================
@@ -403,6 +359,13 @@ def main():
                             total_chars_original=getattr(msg, "total_chars_original", None),
                             total_chars_compressed=getattr(msg, "total_chars_compressed", None),
                         )
+                    render_performance_metrics(
+                        timings=getattr(msg, "timings", None),
+                        candidates_retrieved=getattr(msg, "candidates_retrieved", None),
+                        final_chunk_count=len(msg.retrieved_chunks) if msg.retrieved_chunks else None,
+                        total_chars_original=getattr(msg, "total_chars_original", None),
+                        total_chars_compressed=getattr(msg, "total_chars_compressed", None),
+                    )
 
     # 2. Chat Input Interaction
     prompt = st.chat_input(
@@ -488,10 +451,79 @@ def main():
                         total_chars_compressed=getattr(response, "total_chars_compressed", None),
                     )
 
+                render_performance_metrics(
+                    timings=getattr(response, "timings", None),
+                    candidates_retrieved=getattr(response, "candidates_retrieved", None),
+                    final_chunk_count=len(response.retrieved_chunks) if response.retrieved_chunks else None,
+                    total_chars_original=getattr(response, "total_chars_original", None),
+                    total_chars_compressed=getattr(response, "total_chars_compressed", None),
+                )
+
             except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
                 st.error(f"RAG Error: {str(e)}")
             except Exception as e:
                 st.error(f"Unexpected generation error: {str(e)}")
+
+
+def main():
+    st.set_page_config(
+        page_title="ContextIQ — Document Intelligence",
+        page_icon="🧠",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+
+    apply_custom_styles()
+    render_header()
+
+    # Verify API configuration
+    if not is_api_key_configured():
+        st.error(
+            "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your `.env` file to enable embeddings and generation."
+        )
+
+    # Initialize Vector Store
+    try:
+        vector_store = get_vector_store()
+    except Exception as e:
+        st.error(f"Failed to initialize vector database: {str(e)}")
+        vector_store = None
+
+    # Maintain Session State defaults
+    if "current_document" not in st.session_state:
+        st.session_state["current_document"] = None
+    if "current_pages" not in st.session_state:
+        st.session_state["current_pages"] = 0
+    if "last_response" not in st.session_state:
+        st.session_state["last_response"] = None
+    if "deleting_doc_id" not in st.session_state:
+        st.session_state["deleting_doc_id"] = None
+    if "conversation" not in st.session_state:
+        st.session_state["conversation"] = Conversation()
+    if "min_similarity" not in st.session_state:
+        st.session_state["min_similarity"] = DEFAULT_MIN_SIMILARITY
+    if "retrieval_mode" not in st.session_state:
+        st.session_state["retrieval_mode"] = DEFAULT_RETRIEVAL_MODE
+    if "reranker_enabled" not in st.session_state:
+        st.session_state["reranker_enabled"] = RERANKER_ENABLED
+    if "query_expansion_enabled" not in st.session_state:
+        st.session_state["query_expansion_enabled"] = QUERY_EXPANSION_ENABLED
+    if "parent_child_enabled" not in st.session_state:
+        st.session_state["parent_child_enabled"] = PARENT_CHILD_ENABLED
+    if "context_compression_enabled" not in st.session_state:
+        st.session_state["context_compression_enabled"] = CONTEXT_COMPRESSION_ENABLED
+
+    # Render Sidebar with System Metrics and Hyperparameters
+    config = render_sidebar(vector_store)
+
+    # Top-level Navigation: Conversational Workspace vs. Evaluation Dashboard
+    tab_chat, tab_eval = st.tabs(["💬 Workspace & Chat", "📊 Evaluation Dashboard"])
+
+    with tab_chat:
+        render_workspace(vector_store, config)
+
+    with tab_eval:
+        render_evaluation_dashboard()
 
 
 if __name__ == "__main__":

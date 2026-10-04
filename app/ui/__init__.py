@@ -3,9 +3,14 @@
 from app.ui.components import (
     apply_custom_styles,
     render_header,
+    render_performance_metrics,
+    render_retrieved_context,
     render_sidebar,
     render_sources,
-    render_retrieved_context,
+)
+from app.ui.eval_dashboard import (
+    load_evaluation_results,
+    render_evaluation_dashboard,
 )
 
 __all__ = [
@@ -14,4 +19,7 @@ __all__ = [
     "render_sidebar",
     "render_sources",
     "render_retrieved_context",
+    "render_performance_metrics",
+    "load_evaluation_results",
+    "render_evaluation_dashboard",
 ]

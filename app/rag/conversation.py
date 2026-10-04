@@ -48,6 +48,8 @@ class ChatMessage:
     context_compression_enabled: bool = False
     total_chars_original: Optional[int] = None
     total_chars_compressed: Optional[int] = None
+    # Latency instrumentation metadata
+    timings: Optional[Any] = None
 
     def __post_init__(self):
         if not isinstance(self.role, str) or self.role.strip().lower() not in ALLOWED_ROLES:
@@ -91,6 +93,7 @@ class Conversation:
         context_compression_enabled: bool = False,
         total_chars_original: Optional[int] = None,
         total_chars_compressed: Optional[int] = None,
+        timings: Optional[Any] = None,
     ) -> ChatMessage:
         """Appends a new assistant message to the conversation with its cited sources and retrieved chunks."""
         msg = ChatMessage(
@@ -112,6 +115,7 @@ class Conversation:
             context_compression_enabled=context_compression_enabled,
             total_chars_original=total_chars_original,
             total_chars_compressed=total_chars_compressed,
+            timings=timings,
         )
         self.messages.append(msg)
         return msg

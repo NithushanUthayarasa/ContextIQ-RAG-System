@@ -14,6 +14,7 @@ The original user question is always passed to the generator.
 The rewritten retrieval query is used for both retrieval and reranking.
 """
 
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -30,6 +31,38 @@ from app.retrieval.retriever import RetrievedChunk, Retriever
 class RAGPipelineError(Exception):
     """Base exception for RAG pipeline failures."""
     pass
+
+
+@dataclass
+class PipelineTimings:
+    """Detailed runtime execution latency measurements (in milliseconds) for RAG pipeline stages."""
+    total_ms: float = 0.0
+    query_rewrite_ms: Optional[float] = None
+    query_expansion_ms: Optional[float] = None
+    retrieval_ms: float = 0.0
+    reranking_ms: Optional[float] = None
+    parent_resolution_ms: Optional[float] = None
+    compression_ms: Optional[float] = None
+    generation_ms: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Returns non-null timing metrics formatted as a dictionary."""
+        d: Dict[str, Any] = {
+            "total_ms": self.total_ms,
+            "retrieval_ms": self.retrieval_ms,
+            "generation_ms": self.generation_ms,
+        }
+        if self.query_rewrite_ms is not None:
+            d["query_rewrite_ms"] = self.query_rewrite_ms
+        if self.query_expansion_ms is not None:
+            d["query_expansion_ms"] = self.query_expansion_ms
+        if self.reranking_ms is not None:
+            d["reranking_ms"] = self.reranking_ms
+        if self.parent_resolution_ms is not None:
+            d["parent_resolution_ms"] = self.parent_resolution_ms
+        if self.compression_ms is not None:
+            d["compression_ms"] = self.compression_ms
+        return d
 
 
 @dataclass
@@ -57,6 +90,8 @@ class RAGResponse:
     context_compression_enabled: bool = False
     total_chars_original: Optional[int] = None
     total_chars_compressed: Optional[int] = None
+    # Latency instrumentation
+    timings: Optional[PipelineTimings] = None
 
     def __post_init__(self):
         if self.retrieval_query is None:
@@ -156,9 +191,12 @@ class RAGPipeline:
             raise EmptyQuestionError("Question must not be empty.")
 
         cleaned_question = question.strip()
+        t_pipeline_start = time.perf_counter()
 
         # Step 0: Context-aware query rewriting
+        query_rewrite_ms: Optional[float] = None
         if self.query_rewriter is not None and conversation_messages:
+            t0 = time.perf_counter()
             try:
                 retrieval_query = self.query_rewriter.rewrite_query(
                     cleaned_question,
@@ -166,6 +204,7 @@ class RAGPipeline:
                 )
             except Exception:
                 retrieval_query = cleaned_question
+            query_rewrite_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         else:
             retrieval_query = cleaned_question
 
@@ -176,8 +215,10 @@ class RAGPipeline:
         # Step 1: Query Expansion (optional)
         query_expansion_enabled = self.query_expander is not None
         expanded_queries = [retrieval_query]
+        query_expansion_ms: Optional[float] = None
 
         if query_expansion_enabled:
+            t0 = time.perf_counter()
             try:
                 expanded = self.query_expander.expand(
                     retrieval_query,
@@ -192,6 +233,7 @@ class RAGPipeline:
                     expanded_queries = expanded
             except Exception:
                 expanded_queries = [retrieval_query]
+            query_expansion_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
         # Step 2: Retrieval
         reranking_active = self.reranker is not None
@@ -204,6 +246,7 @@ class RAGPipeline:
             candidate_k = top_k
 
         # Retrieval for each expanded query
+        t0 = time.perf_counter()
         all_candidates: List[RetrievedChunk] = []
         for q in expanded_queries:
             retrieve_kwargs: Dict[str, Any] = {"query": q, "top_k": candidate_k}
@@ -237,36 +280,43 @@ class RAGPipeline:
             else:
                 seen_ids[cid] = chunk
         deduped: List[RetrievedChunk] = list(seen_ids.values())
+        retrieval_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
         candidates_retrieved = len(deduped)
 
-        # Apply reranking if enabled
+        # Step 3: Candidate Reranking
+        reranking_ms: Optional[float] = None
         if reranking_active and deduped:
+            t0 = time.perf_counter()
             reranked_chunks = self.reranker.rerank(
                 query=retrieval_query,
                 candidates=deduped,
                 top_k=final_k,
             )
+            reranking_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         else:
             reranked_chunks = deduped[:final_k] if final_k is not None else deduped
 
-        # Step 5: Parent Context Resolution (optional)
+        # Step 4: Parent Context Resolution (optional)
         is_parent_child = (
             parent_child_enabled
             if parent_child_enabled is not None
             else self.parent_child_enabled
         )
         child_chunks_retrieved = len(deduped)
+        parent_resolution_ms: Optional[float] = None
 
         if is_parent_child and reranked_chunks:
+            t0 = time.perf_counter()
             p_store = self.parent_store or getattr(self.retriever, "vector_store", None)
             final_chunks = resolve_parent_context(reranked_chunks, parent_store=p_store)
             parent_contexts_used = len(final_chunks)
+            parent_resolution_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         else:
             final_chunks = reranked_chunks
             parent_contexts_used = None
 
-        # Step 6: Context Compression (optional)
+        # Step 5: Context Compression (optional)
         is_compression = (
             context_compression_enabled
             if context_compression_enabled is not None
@@ -275,23 +325,41 @@ class RAGPipeline:
 
         total_chars_original: Optional[int] = None
         total_chars_compressed: Optional[int] = None
+        compression_ms: Optional[float] = None
 
         if is_compression and self.compressor is not None and final_chunks:
+            t0 = time.perf_counter()
             total_chars_original = sum(len(c.text) for c in final_chunks)
             final_chunks = self.compressor.compress(
                 query=retrieval_query,
                 chunks=final_chunks,
             )
             total_chars_compressed = sum(len(c.text) for c in final_chunks)
+            compression_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         elif is_compression and final_chunks:
             total_chars_original = sum(len(c.text) for c in final_chunks)
             total_chars_compressed = total_chars_original
 
-        # Source deduplication and generation
+        # Step 6: Generation
         sources = self.extract_sources(final_chunks)
+        t0 = time.perf_counter()
         answer = self.generator.generate(
             question=cleaned_question,
             retrieved_chunks=final_chunks,
+        )
+        generation_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+
+        total_ms = round((time.perf_counter() - t_pipeline_start) * 1000.0, 2)
+
+        timings = PipelineTimings(
+            total_ms=total_ms,
+            query_rewrite_ms=query_rewrite_ms,
+            query_expansion_ms=query_expansion_ms,
+            retrieval_ms=retrieval_ms,
+            reranking_ms=reranking_ms,
+            parent_resolution_ms=parent_resolution_ms,
+            compression_ms=compression_ms,
+            generation_ms=generation_ms,
         )
 
         # Determine effective threshold and mode applied
@@ -325,4 +393,5 @@ class RAGPipeline:
             context_compression_enabled=bool(is_compression),
             total_chars_original=total_chars_original,
             total_chars_compressed=total_chars_compressed,
+            timings=timings,
         )

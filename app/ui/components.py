@@ -3,7 +3,7 @@ ContextIQ - UI Components Module
 Reusable visual components for Streamlit interface: headers, sidebar, cards, sources, and context viewers.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import streamlit as st
 
 from app.config import (
@@ -440,3 +440,87 @@ def render_retrieved_context(
                 """,
                 unsafe_allow_html=True,
             )
+
+
+def render_performance_metrics(
+    timings: Optional[Any] = None,
+    candidates_retrieved: Optional[int] = None,
+    final_chunk_count: Optional[int] = None,
+    total_chars_original: Optional[int] = None,
+    total_chars_compressed: Optional[int] = None,
+):
+    """
+    Renders a compact, expandable Performance drawer showing pipeline stage latencies
+    and context throughput statistics for a single RAG turn.
+    """
+    if timings is None:
+        return
+
+    total_ms = getattr(timings, "total_ms", None)
+    if total_ms is None:
+        return
+
+    with st.expander("⚡ Performance", expanded=False):
+        executed_stages: List[Tuple[str, float]] = [("Total", total_ms)]
+
+        rewrite_ms = getattr(timings, "query_rewrite_ms", None)
+        if rewrite_ms is not None and rewrite_ms > 0:
+            executed_stages.append(("Query Rewrite", rewrite_ms))
+
+        expansion_ms = getattr(timings, "query_expansion_ms", None)
+        if expansion_ms is not None and expansion_ms > 0:
+            executed_stages.append(("Query Expansion", expansion_ms))
+
+        retrieval_ms = getattr(timings, "retrieval_ms", None)
+        if retrieval_ms is not None:
+            executed_stages.append(("Retrieval", retrieval_ms))
+
+        rerank_ms = getattr(timings, "reranking_ms", None)
+        if rerank_ms is not None and rerank_ms > 0:
+            executed_stages.append(("Reranking", rerank_ms))
+
+        parent_ms = getattr(timings, "parent_resolution_ms", None)
+        if parent_ms is not None and parent_ms > 0:
+            executed_stages.append(("Parent Resolution", parent_ms))
+
+        comp_ms = getattr(timings, "compression_ms", None)
+        if comp_ms is not None and comp_ms > 0:
+            executed_stages.append(("Compression", comp_ms))
+
+        gen_ms = getattr(timings, "generation_ms", None)
+        if gen_ms is not None:
+            executed_stages.append(("Generation", gen_ms))
+
+        # Render in compact columns
+        cols = st.columns(len(executed_stages))
+        for col, (stage_name, ms_val) in zip(cols, executed_stages):
+            with col:
+                st.metric(
+                    label=stage_name,
+                    value=f"{ms_val:,.1f} ms" if ms_val < 100 else f"{ms_val:,.0f} ms",
+                )
+
+        # Context throughput statistics
+        stats_notes = []
+        if candidates_retrieved is not None:
+            cand_str = f"Candidates retrieved: **{candidates_retrieved}**"
+            if final_chunk_count is not None:
+                cand_str += f" → Final context chunks: **{final_chunk_count}**"
+            stats_notes.append(cand_str)
+        elif final_chunk_count is not None:
+            stats_notes.append(f"Final context chunks: **{final_chunk_count}**")
+
+        if total_chars_original is not None and total_chars_compressed is not None:
+            if total_chars_original != total_chars_compressed:
+                saved = total_chars_original - total_chars_compressed
+                pct = (saved / total_chars_original) * 100 if total_chars_original > 0 else 0
+                stats_notes.append(
+                    f"Context characters: **{total_chars_original:,}** → **{total_chars_compressed:,}** (**{pct:.1f}% reduction**)"
+                )
+            else:
+                stats_notes.append(f"Context payload: **{total_chars_original:,} characters**")
+        elif total_chars_original is not None:
+            stats_notes.append(f"Context payload: **{total_chars_original:,} characters**")
+
+        if stats_notes:
+            st.caption(" • ".join(stats_notes))
