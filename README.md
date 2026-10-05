@@ -204,6 +204,7 @@ The following table lists the primary modules and their responsibilities across 
 | `GeminiGenerator` | `app/generation/generator.py` | Constructs grounded system prompts and generates cited answers using Gemini. |
 | `AdvancedRAGEvaluator` | `app/evaluation/retrieval_evaluator.py` | Computes quantitative IR, context reduction, evidence retention, and citation metrics. |
 | `EvaluationDashboard` | `app/ui/eval_dashboard.py` | Renders interactive Streamlit benchmark dashboard visualizing ablation matrices, charts, and queries. |
+| `ErrorHandler` | `app/utils/error_handler.py` | Sanitizes secrets/paths, maps technical errors to safe categories, and handles transactional rollback. |
 
 ---
 
@@ -355,7 +356,29 @@ Open `http://localhost:8501` in your browser.
 
 ---
 
-## 13. How to Use
+## 13. Deployment — Streamlit Community Cloud
+
+ContextIQ is pre-configured for deployment to [Streamlit Community Cloud](https://streamlit.io/cloud):
+
+1. **Merge Branch**: Merge the verified `feature/v2-rag` branch into `main`.
+2. **Connect Repository**: Sign in to Streamlit Community Cloud and select your repository.
+3. **Select Branch**: Choose `main`.
+4. **Specify Entrypoint**: Set the main file path to `app/main.py`.
+5. **Configure Secrets**: In **Advanced settings > Secrets**, configure your Gemini API key:
+   ```toml
+   GEMINI_API_KEY = "your_actual_gemini_api_key_here"
+   ```
+6. **Deploy**: Click **Deploy**.
+7. **Smoke Test**: Verify document upload, chat turns with citations, Retrieval Inspector, Performance metrics, and the Evaluation Dashboard.
+
+> [!NOTE]
+> - `.env` is for local workstation development only and is strictly excluded via `.gitignore`.
+> - Production cloud deployments obtain credentials securely via `st.secrets["GEMINI_API_KEY"]`.
+> - Local container storage (`data/uploads/` and `chroma_db/`) is ephemeral on Community Cloud and will reset when the application restarts or redeploys. For permanent multi-tenant vector storage, a hosted vector database can be configured.
+
+---
+
+## 14. How to Use
 
 1. **Upload Documents**: Drag and drop one or more PDF files into the sidebar upload section.
 2. **Indexing**: ContextIQ extracts text, chunks content, computes embeddings, and stores vectors.
@@ -373,7 +396,7 @@ Open `http://localhost:8501` in your browser.
 
 ---
 
-## 14. Quantitative Evaluation
+## 15. Quantitative Evaluation
 
 ContextIQ avoids subjective assessments of answer quality by incorporating an automated quantitative benchmark harness (`scripts/evaluate_retrieval.py`). The dataset comprises 15 verified queries mapped to an indexed lecture presentation (`SE3090 Lecture 04 Database Auth Integration.pdf`).
 
@@ -408,7 +431,7 @@ flowchart TD
 
 ---
 
-## 15. Benchmark Analysis & Engineering Findings
+## 16. Benchmark Analysis & Engineering Findings
 
 Quantitative benchmarking reveals practical insights about RAG pipelines:
 
@@ -420,7 +443,7 @@ Quantitative benchmarking reveals practical insights about RAG pipelines:
 
 ---
 
-## 16. Evaluation & Benchmark Commands
+## 17. Evaluation & Benchmark Commands
 
 ### Run the Evaluation Benchmark
 ```powershell
@@ -432,19 +455,19 @@ Generated outputs:
 
 ---
 
-## 17. Testing
+## 18. Testing
 
-The codebase includes comprehensive unit and integration tests across all ingestion, retrieval, ranking, compression, and pipeline modules.
+The codebase includes comprehensive unit and integration tests across all ingestion, retrieval, ranking, compression, pipeline, and reliability modules.
 
 ```powershell
 python -m pytest -q
 ```
 
-*Current verified development state: **338 tests passing, 0 failures** (100% offline with zero external API calls).*
+*Current verified development state: **363 tests passing, 0 failures** (100% offline with zero external API calls).*
 
 ---
 
-## 18. Key Engineering Decisions
+## 19. Key Engineering Decisions
 
 - **Local Vector Storage**: ChromaDB was selected to provide self-contained, disk-persistent vector search without external service dependencies.
 - **SHA-256 Document Identity**: File content hashing guarantees deterministic document IDs and prevents duplicate vector entries.
@@ -453,21 +476,25 @@ python -m pytest -q
 - **Extractive Sentence Compression**: Local sentence extraction avoids the latency and monetary cost of an additional generative LLM call.
 - **Modular Ablation Toggles**: Advanced RAG modules are fully decoupled and toggleable to enable rigorous ablation testing.
 - **Deterministic Evaluation**: Testing and benchmark runs execute entirely offline with deterministic mocks, ensuring reliable CI verification.
+- **Graceful Error Handling & Secret Sanitization**: Exceptions across configuration, authentication, rate limiting, network timeouts, and PDF extraction are mapped to user-friendly messages while redacting API keys and local filesystem paths from logs and UI.
+- **Transactional Document Ingestion Rollback**: If chunk embedding or vector insertion fails midway, the ingestion pipeline purges partially written ChromaDB records and cleans up temporary staging files.
+- **Streamlit Community Cloud Readiness**: Seamlessly resolves secrets from `st.secrets["GEMINI_API_KEY"]` when running in hosted environments, with safe fallbacks for read-only filesystem paths.
 
 ---
 
-## 19. System Limitations
+## 20. System Limitations
 
 - **Lexical Reranker**: TF-IDF reranking is strictly lexical and cannot evaluate semantic context or synonyms.
 - **Compression Trade-Off**: Extractive sentence scoring can omit short bullet points that lack direct word overlap with the query.
 - **Single-Corpus Benchmark**: The automated benchmark is currently calibrated for a single slide-deck PDF; diverse document formats require wider testing.
-- **PDF Text Dependency**: Text extraction relies on native text streams; scanned image-only PDFs require an OCR engine.
-- **API Availability**: Live generation and production query expansion require Google Gemini API connectivity and quota.
+- **PDF Text Dependency**: Text extraction relies on native text streams; scanned image-only PDFs require an OCR engine (unsupported in V1).
+- **Password-Protected PDFs**: Encrypted and password-protected PDFs are detected and rejected gracefully rather than silently failing.
+- **API Availability & Quotas**: Live generation and production query expansion require Google Gemini API connectivity and sufficient quota.
 - **Single-User Architecture**: The local ChromaDB SQLite setup is architected for local workstation execution rather than high-concurrency multi-tenant deployment.
 
 ---
 
-## 20. Future Improvements
+## 21. Future Improvements
 
 - **Neural Cross-Encoder**: Experiment with a neural reranker (e.g., `ms-marco-MiniLM-L-6-v2`) to address lexical reranking limitations.
 - **Multi-Corpus Evaluation**: Expand the evaluation dataset to include research papers, legal documents, and technical manuals.
@@ -479,7 +506,7 @@ python -m pytest -q
 
 ---
 
-## 21. UI Screenshots
+## 22. UI Screenshots
 
 *(Visual captures will be added in Phase 15 Portfolio Polish)*
 
@@ -492,7 +519,7 @@ python -m pytest -q
 
 ---
 
-## 22. What This Project Demonstrates
+## 23. What This Project Demonstrates
 
 ContextIQ demonstrates practical engineering across core AI and Information Retrieval disciplines:
 

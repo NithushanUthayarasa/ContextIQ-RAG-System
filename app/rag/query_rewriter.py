@@ -11,6 +11,7 @@ from app.config import (
     DEFAULT_MAX_REWRITE_HISTORY,
     GEMINI_API_KEY,
     GENERATION_MODEL_NAME,
+    get_gemini_api_key,
 )
 from app.rag.conversation import ChatMessage
 
@@ -47,7 +48,7 @@ class QueryRewriter:
         max_history_messages: int = DEFAULT_MAX_REWRITE_HISTORY,
         client: Optional[genai.Client] = None,
     ):
-        self.api_key = api_key if api_key is not None else GEMINI_API_KEY
+        self.api_key = api_key if api_key is not None else get_gemini_api_key()
         self.model_name = model_name or GENERATION_MODEL_NAME
         self.max_history_messages = max_history_messages
 

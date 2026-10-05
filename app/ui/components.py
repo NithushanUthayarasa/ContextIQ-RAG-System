@@ -26,12 +26,17 @@ def apply_custom_styles():
 
 
 def render_header():
-    """Renders the top title and branding banner."""
+    """Renders the top branding banner."""
     st.markdown(
         """
-        <div class="main-header">
-            <div class="main-title">🧠 ContextIQ</div>
-            <div class="main-subtitle">RAG-Powered Document Intelligence System</div>
+        <div class="contextiq-header">
+            <div class="contextiq-title-row">
+                <h1 class="contextiq-brand">ContextIQ</h1>
+                <span class="contextiq-tagline">RAG-Powered Multi-Document Intelligence System</span>
+            </div>
+            <p class="contextiq-subtitle">
+                Upload documents, retrieve grounded evidence, and ask questions with source-aware answers.
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -40,9 +45,13 @@ def render_header():
 
 def render_sidebar(vector_store) -> Dict[str, Any]:
     """
-    Renders the sidebar containing system status, model parameters, and document metrics.
+    Renders the sidebar containing system status, document collection,
+    retrieval settings, and advanced RAG feature toggles.
     """
     with st.sidebar:
+        # ==========================================
+        # 1. System Status
+        # ==========================================
         st.markdown("### ⚙️ System Status")
 
         api_ready = is_api_key_configured()
@@ -56,16 +65,20 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
                 '<span class="status-badge offline">● Gemini API: Missing Key</span>',
                 unsafe_allow_html=True,
             )
-            st.caption("Add your GEMINI_API_KEY to the .env file to enable embeddings & LLM.")
+            st.caption("Add your `GEMINI_API_KEY` to `.env` or Streamlit secrets.")
 
         st.markdown(
             '<span class="status-badge online" style="margin-top: 6px;">● Vector Store: ChromaDB</span>',
             unsafe_allow_html=True,
         )
+        st.caption(f"**Models:** `{EMBEDDING_MODEL_NAME}` · `{GENERATION_MODEL_NAME}`")
 
         st.divider()
 
-        st.markdown("### 📚 Indexed Documents")
+        # ==========================================
+        # 2. Documents & Collection
+        # ==========================================
+        st.markdown("### 📚 Documents")
         total_chunks = vector_store.count() if vector_store else 0
         indexed_docs = vector_store.list_indexed_documents() if vector_store else []
 
@@ -151,24 +164,28 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
 
         st.divider()
 
-        st.markdown("### 🛠️ Configuration")
-        chunk_size = st.number_input(
-            "Chunk Size (characters)",
-            min_value=200,
-            max_value=3000,
-            value=st.session_state.get("chunk_size", DEFAULT_CHUNK_SIZE),
-            step=100,
-        )
-        st.session_state["chunk_size"] = chunk_size
+        # ==========================================
+        # 3. Retrieval Settings
+        # ==========================================
+        st.markdown("### 🔍 Retrieval Settings")
 
-        chunk_overlap = st.number_input(
-            "Chunk Overlap (characters)",
-            min_value=0,
-            max_value=max(100, chunk_size - 100),
-            value=min(st.session_state.get("chunk_overlap", DEFAULT_CHUNK_OVERLAP), chunk_size - 50),
-            step=50,
+        # Retrieval Mode Selector
+        valid_modes = ["semantic", "hybrid", "bm25"]
+        current_mode = st.session_state.get("retrieval_mode", DEFAULT_RETRIEVAL_MODE)
+        mode_idx = valid_modes.index(current_mode) if current_mode in valid_modes else 0
+
+        retrieval_mode = st.selectbox(
+            "Retrieval Strategy",
+            options=valid_modes,
+            index=mode_idx,
+            format_func=lambda m: {
+                "semantic": "🧠 Semantic Search (Vector)",
+                "hybrid": "⚡ Hybrid Search (Vector + BM25)",
+                "bm25": "🔤 Keyword Search (BM25)",
+            }.get(m, m),
+            help="Choose retrieval strategy: Semantic (dense embeddings), BM25 (keyword matching), or Hybrid (Reciprocal Rank Fusion).",
         )
-        st.session_state["chunk_overlap"] = chunk_overlap
+        st.session_state["retrieval_mode"] = retrieval_mode
 
         top_k = st.slider(
             "Top-K Chunks to Retrieve",
@@ -214,7 +231,7 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
             ]
 
             selected_labels = st.multiselect(
-                "🔎 Search Scope (Document Filter)",
+                "Search Scope (Document Filter)",
                 options=list(doc_options.keys()),
                 default=existing_selected,
                 help="Restrict retrieval to one or more documents. Leave empty to search All Documents.",
@@ -225,71 +242,72 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
             else:
                 selected_doc_ids = None
 
-        # Retrieval Mode Selector
-        valid_modes = ["semantic", "hybrid", "bm25"]
-        current_mode = st.session_state.get("retrieval_mode", DEFAULT_RETRIEVAL_MODE)
-        mode_idx = valid_modes.index(current_mode) if current_mode in valid_modes else 0
+        st.divider()
 
-        retrieval_mode = st.selectbox(
-            "Retrieval Strategy",
-            options=valid_modes,
-            index=mode_idx,
-            format_func=lambda m: {
-                "semantic": "🧠 Semantic Search (Vector)",
-                "hybrid": "⚡ Hybrid Search (Vector + BM25)",
-                "bm25": "🔤 Keyword Search (BM25)",
-            }.get(m, m),
-            help="Choose retrieval strategy: Semantic (dense embeddings), BM25 (keyword matching), or Hybrid (Reciprocal Rank Fusion).",
-        )
-        st.session_state["retrieval_mode"] = retrieval_mode
-
-        # Reranker Toggle
-        reranker_enabled = st.toggle(
-            "⚡ Enable Reranking",
-            value=st.session_state.get("reranker_enabled", False),
-            help=(
-                "When enabled, the retriever fetches a larger candidate pool "
-                "which is then reranked by TF-IDF term relevance before generation. "
-                "A cross-encoder reranker can be plugged in later."
-            ),
-        )
-        st.session_state["reranker_enabled"] = reranker_enabled
+        # ==========================================
+        # 4. Advanced RAG
+        # ==========================================
+        st.markdown("### ⚡ Advanced RAG")
 
         # Query Expansion Toggle
         query_expansion_enabled = st.toggle(
-            "⚡ Enable Query Expansion",
+            "Query Expansion",
             value=st.session_state.get("query_expansion_enabled", False),
             help=(
-                "When enabled, the system generates alternative search queries "
-                "to broaden retrieval before ranking. Uses Gemini LLM."
+                "Generates alternative search queries via Gemini to broaden candidate pool coverage."
             ),
         )
         st.session_state["query_expansion_enabled"] = query_expansion_enabled
 
+        # Reranker Toggle
+        reranker_enabled = st.toggle(
+            "TF-IDF Reranking",
+            value=st.session_state.get("reranker_enabled", False),
+            help=(
+                "Fetches an expanded candidate pool and reranks by lexical term overlap."
+            ),
+        )
+        st.session_state["reranker_enabled"] = reranker_enabled
+
         # Parent/Child Retrieval Toggle
         parent_child_enabled = st.toggle(
-            "⚡ Enable Parent/Child Retrieval",
+            "Parent/Child Retrieval",
             value=st.session_state.get("parent_child_enabled", False),
             help=(
-                "When enabled, child chunks are used for precise matching and reranking, "
-                "then expanded to full parent sections before generating the answer."
+                "Matches against small child chunks and expands to larger parent sections for generation."
             ),
         )
         st.session_state["parent_child_enabled"] = parent_child_enabled
 
         # Context Compression Toggle
         context_compression_enabled = st.toggle(
-            "⚡ Enable Context Compression",
+            "Context Compression",
             value=st.session_state.get("context_compression_enabled", False),
             help=(
-                "When enabled, an extractive compressor removes irrelevant sentences "
-                "from retrieved chunks before generating the answer, reducing prompt size."
+                "Extracts query-relevant sentences from retrieved context, reducing prompt size."
             ),
         )
         st.session_state["context_compression_enabled"] = context_compression_enabled
 
-        st.caption(f"**Embeddings:** `{EMBEDDING_MODEL_NAME}`")
-        st.caption(f"**Generator:** `{GENERATION_MODEL_NAME}`")
+        # Chunking parameters tucked into clean expander
+        with st.expander("⚙️ Advanced Chunking", expanded=False):
+            chunk_size = st.number_input(
+                "Chunk Size (characters)",
+                min_value=200,
+                max_value=3000,
+                value=st.session_state.get("chunk_size", DEFAULT_CHUNK_SIZE),
+                step=100,
+            )
+            st.session_state["chunk_size"] = chunk_size
+
+            chunk_overlap = st.number_input(
+                "Chunk Overlap (characters)",
+                min_value=0,
+                max_value=max(100, chunk_size - 100),
+                value=min(st.session_state.get("chunk_overlap", DEFAULT_CHUNK_OVERLAP), chunk_size - 50),
+                step=50,
+            )
+            st.session_state["chunk_overlap"] = chunk_overlap
 
     return {
         "chunk_size": chunk_size,
@@ -306,13 +324,40 @@ def render_sidebar(vector_store) -> Dict[str, Any]:
 
 
 def render_sources(sources: List[Dict[str, Any]]):
-    """Renders cited sources on separate lines."""
+    """Renders cited sources cleanly as responsive badge pills."""
     if not sources:
         return
 
-    st.markdown("#### 📚 Sources")
+    # Deduplicate sources while preserving encounter order
+    seen = set()
+    unique_sources = []
     for s in sources:
-        st.markdown(f"📄 {s['source']} — Page {s['page']}")
+        key = (s.get("source"), s.get("page"))
+        if key not in seen:
+            seen.add(key)
+            unique_sources.append(s)
+
+    pills_html = []
+    for s in unique_sources:
+        src = s.get("source", "Document")
+        page = s.get("page", 1)
+        pills_html.append(
+            f'<div class="source-pill">📄 <span>{src}</span> · <span class="source-pill-page">Page {page}</span></div>'
+        )
+
+    st.markdown(
+        f"""
+        <div style="margin-top: 0.6rem; margin-bottom: 0.25rem;">
+            <div style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94A3B8; margin-bottom: 0.35rem;">
+                Sources
+            </div>
+            <div class="source-container">
+                {"".join(pills_html)}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_retrieved_context(
@@ -332,62 +377,60 @@ def render_retrieved_context(
     total_chars_original: Optional[int] = None,
     total_chars_compressed: Optional[int] = None,
 ):
-    """Renders an expandable inspector for retrieved context chunks and the retrieval query used."""
+    """
+    Renders an expandable inspector for retrieved context chunks, query transformations,
+    and ranking scores for technical demonstration.
+    """
     if not retrieved_chunks:
         return
 
-    with st.expander("🔎 View Retrieved Context (Transparency & Debugging)", expanded=False):
+    with st.expander("🔍 Retrieval Inspector", expanded=False):
         if retrieval_query:
             st.markdown(f"**Retrieval Query Used:** `{retrieval_query}`")
-        if retrieval_mode:
-            st.caption(f"**Retrieval Strategy:** `{retrieval_mode.upper()}`")
 
-        # Query Expansion transparency
+        col_cfg1, col_cfg2 = st.columns(2)
+        with col_cfg1:
+            if retrieval_mode:
+                st.caption(f"**Strategy:** `{retrieval_mode.upper()}`")
+            if similarity_threshold is not None:
+                st.caption(f"**Similarity Threshold:** `{similarity_threshold:.2f}`")
+        with col_cfg2:
+            if document_ids:
+                st.caption(f"**Search Scope:** Filtered to {len(document_ids)} document(s)")
+            else:
+                st.caption("**Search Scope:** All Indexed Documents")
+
+        # Active Enhancements Status
+        enhancement_notes = []
         if query_expansion_enabled:
             num_q = len(expanded_queries) if expanded_queries else 1
-            st.caption(f"**Query Expansion:** Enabled ({num_q} queries generated)")
-            if expanded_queries and len(expanded_queries) > 1:
-                for idx, q in enumerate(expanded_queries, start=1):
-                    st.caption(f"&nbsp;&nbsp;{idx}. `{q}`")
-        else:
-            st.caption("**Query Expansion:** Disabled")
-
-        # Reranking transparency
+            enhancement_notes.append(f"Query Expansion ({num_q} queries)")
         if reranking_enabled:
-            cand_note = f" | Candidates Retrieved: {candidates_retrieved}" if candidates_retrieved is not None else ""
-            st.caption(f"**Reranking:** Enabled (TF-IDF baseline){cand_note} | **Final Chunks:** {len(retrieved_chunks)}")
-        else:
-            st.caption("**Reranking:** Disabled")
-
-        # Parent/Child transparency
+            cand_str = f", {candidates_retrieved} candidates" if candidates_retrieved else ""
+            enhancement_notes.append(f"TF-IDF Reranking ({len(retrieved_chunks)} final{cand_str})")
         if parent_child_enabled:
             child_cnt = child_chunks_retrieved if child_chunks_retrieved is not None else len(retrieved_chunks)
             parent_cnt = parent_contexts_used if parent_contexts_used is not None else len(retrieved_chunks)
-            st.caption(f"**Parent/Child Retrieval:** Enabled | **Child Candidates:** {child_cnt} | **Parent Contexts:** {parent_cnt}")
-        else:
-            st.caption("**Parent/Child Retrieval:** Disabled")
-
-        # Context Compression transparency
+            enhancement_notes.append(f"Parent/Child ({child_cnt} children → {parent_cnt} parents)")
         if context_compression_enabled:
-            reduction_str = ""
-            if total_chars_original is not None and total_chars_compressed is not None:
-                saved = total_chars_original - total_chars_compressed
-                pct = (saved / total_chars_original) * 100 if total_chars_original > 0 else 0
-                reduction_str = f" | Chars: {total_chars_original} → {total_chars_compressed} ({pct:.1f}% reduced)"
-            st.caption(f"**Context Compression:** Enabled (Extractive){reduction_str}")
-        else:
-            st.caption("**Context Compression:** Disabled")
+            red_note = ""
+            if total_chars_original and total_chars_compressed:
+                pct = ((total_chars_original - total_chars_compressed) / total_chars_original) * 100
+                red_note = f", {pct:.1f}% reduced"
+            enhancement_notes.append(f"Context Compression{red_note}")
 
-        if document_ids:
-            st.caption(f"**Search Scope:** Filtered to {len(document_ids)} selected document(s)")
-        else:
-            st.caption("**Search Scope:** All Documents")
-        if similarity_threshold is not None:
-            st.caption(f"**Similarity Threshold Applied:** `{similarity_threshold:.2f}` (filtered chunks with similarity < threshold)")
+        if enhancement_notes:
+            st.caption(f"**Active Enhancements:** {' • '.join(enhancement_notes)}")
+
+        if query_expansion_enabled and expanded_queries and len(expanded_queries) > 1:
+            with st.expander("Expanded Queries", expanded=False):
+                for idx, q in enumerate(expanded_queries, start=1):
+                    st.caption(f"{idx}. `{q}`")
+
         st.caption(
-            "Inspecting raw chunks retrieved from the index. "
-            "Scores reflect the active retrieval strategy (Cosine Distance/Similarity, BM25, and/or RRF)."
+            f"Showing **{len(retrieved_chunks)}** context chunk(s) retrieved from the index:"
         )
+
         for idx, chunk in enumerate(retrieved_chunks, start=1):
             doc_badge = (
                 f" | <code>{chunk.document_id[:8]}...</code>"
@@ -432,7 +475,7 @@ def render_retrieved_context(
                 f"""
                 <div class="chunk-container">
                     <div class="chunk-meta">
-                        <span><strong>Context #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Index {chunk.chunk_index}){doc_badge}{parent_badge}{child_badge}{comp_badge}</span>
+                        <span><strong>Context #{idx}</strong> | 📄 {chunk.source} (Page {chunk.page_number} • Chunk {chunk.chunk_index}){doc_badge}{parent_badge}{child_badge}{comp_badge}</span>
                         <span>{metrics_html}</span>
                     </div>
                     <div class="chunk-text">{chunk.text}</div>

@@ -17,6 +17,7 @@ from app.config import (
     GENERATION_MODEL_NAME,
     QUERY_EXPANSION_ENABLED,
     QUERY_EXPANSION_MAX_QUERIES,
+    get_gemini_api_key,
 )
 
 
@@ -47,7 +48,7 @@ class GeminiQueryExpander(BaseQueryExpander):
     """
 
     def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None, client: Optional[genai.Client] = None):
-        self.api_key = api_key if api_key is not None else GEMINI_API_KEY
+        self.api_key = api_key if api_key is not None else get_gemini_api_key()
         self.model_name = model_name or GENERATION_MODEL_NAME
         if client is not None:
             self.client = client

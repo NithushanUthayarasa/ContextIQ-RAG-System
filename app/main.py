@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import streamlit as st
 
+import logging
+
 from app.config import (
     CONTEXT_COMPRESSION_ENABLED,
     DEFAULT_CHUNK_OVERLAP,
@@ -32,11 +34,20 @@ from app.ingestion.pdf_loader import (
     PDFLoader,
     PDFLoaderError,
     InvalidPDFError,
+    EmptyPDFError,
+    EncryptedPDFError,
+    CorruptPDFError,
     ScannedOrEmptyPDFError,
 )
 from app.rag.conversation import Conversation
 from app.rag.pipeline import RAGPipeline, RAGPipelineError
 from app.rag.query_rewriter import QueryRewriter
+from app.utils.error_handler import (
+    safe_log_exception,
+    translate_exception_to_user_message,
+)
+
+logger = logging.getLogger("contextiq.main")
 from app.retrieval.retriever import Retriever, RetrieverError
 from app.retrieval.reranker import TFIDFReranker
 from app.retrieval.compressor import ExtractiveContextCompressor
@@ -89,42 +100,58 @@ def ingest_pdf_bytes(
     # 3. Safe staging path using full document_id to avoid filename collisions
     upload_dir.mkdir(parents=True, exist_ok=True)
     staging_path = upload_dir / f"{document_id}.pdf"
+    created_staging = False
     if not staging_path.exists():
         with open(staging_path, "wb") as f:
             f.write(file_bytes)
+        created_staging = True
 
-    # 4. Extract text using PDFLoader preserving human-readable original filename as source
-    loader = PDFLoader(staging_path, source_name=file_name)
-    load_result = loader.load()
+    try:
+        # 4. Extract text using PDFLoader preserving human-readable original filename as source
+        loader = PDFLoader(staging_path, source_name=file_name)
+        load_result = loader.load()
 
-    # 5. Chunk pages into parent sections and child chunks with document_id identity
-    parent_chunk_size = max(DEFAULT_PARENT_CHUNK_SIZE, chunk_size * 2)
-    parent_chunker = ParentChildChunker(
-        parent_chunk_size=parent_chunk_size,
-        parent_chunk_overlap=DEFAULT_PARENT_CHUNK_OVERLAP,
-        child_chunk_size=chunk_size,
-        child_chunk_overlap=chunk_overlap,
-    )
-    parent_chunks, chunks = parent_chunker.split_pages(load_result.pages, document_id=document_id)
+        # 5. Chunk pages into parent sections and child chunks with document_id identity
+        parent_chunk_size = max(DEFAULT_PARENT_CHUNK_SIZE, chunk_size * 2)
+        parent_chunker = ParentChildChunker(
+            parent_chunk_size=parent_chunk_size,
+            parent_chunk_overlap=DEFAULT_PARENT_CHUNK_OVERLAP,
+            child_chunk_size=chunk_size,
+            child_chunk_overlap=chunk_overlap,
+        )
+        parent_chunks, chunks = parent_chunker.split_pages(load_result.pages, document_id=document_id)
 
-    # 6. Store parent sections in ChromaDB
-    vector_store.add_parents(parent_chunks)
+        # 6. Store parent sections in ChromaDB
+        vector_store.add_parents(parent_chunks)
 
-    # 7. Generate Gemini embeddings for child chunks
-    embeddings = embedder.embed_documents(chunks)
+        # 7. Generate Gemini embeddings for child chunks
+        embeddings = embedder.embed_documents(chunks)
 
-    # 8. Store child chunks in ChromaDB
-    vector_store.add_chunks(chunks, embeddings)
+        # 8. Store child chunks in ChromaDB
+        vector_store.add_chunks(chunks, embeddings)
 
-    return {
-        "status": "indexed",
-        "document_id": document_id,
-        "source": file_name,
-        "chunks": len(chunks),
-        "pages": load_result.non_empty_page_count,
-        "total_pages": load_result.total_pages,
-        "empty_pages": load_result.empty_pages,
-    }
+        return {
+            "status": "indexed",
+            "document_id": document_id,
+            "source": file_name,
+            "chunks": len(chunks),
+            "pages": load_result.non_empty_page_count,
+            "total_pages": load_result.total_pages,
+            "empty_pages": load_result.empty_pages,
+        }
+    except Exception as e:
+        # Rollback partial ingestion: delete any indexed chunks for this document
+        try:
+            vector_store.delete_by_document_id(document_id)
+        except Exception:
+            pass
+        # Remove staging file if created during this attempt
+        if created_staging and staging_path.exists():
+            try:
+                staging_path.unlink()
+            except Exception:
+                pass
+        raise
 
 
 def handle_chat_turn(
@@ -214,15 +241,15 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
     Renders document ingestion, conversation history, and chat interaction interface.
     """
     # ==========================================
-    # SECTION 1: Document Upload & Indexing
+    # SECTION 1: Document Workspace
     # ==========================================
-    st.markdown("### 📄 Document Ingestion")
+    st.markdown("### 📄 Document Workspace")
 
     uploaded_files = st.file_uploader(
         "Upload PDF documents to index:",
         type=["pdf"],
         accept_multiple_files=True,
-        help="Upload standard text-based PDF documents (Scanned/OCR not supported in V1)",
+        help="Upload standard text-based PDF documents (Scanned/OCR documents require preprocessing)",
     )
 
     if uploaded_files:
@@ -276,19 +303,24 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
                             st.session_state["current_pages"] = res["total_pages"]
 
                     except ScannedOrEmptyPDFError as e:
-                        status.write(f"❌ `{file_name}` — Scanned or image-only PDF: {str(e)}")
+                        safe_log_exception(logger, f"Ingestion error for {file_name}", e)
+                        status.write(f"❌ `{file_name}` — {translate_exception_to_user_message(e, context='pdf')}")
                         summary_stats["failed"] += 1
-                    except (PDFLoaderError, InvalidPDFError) as e:
-                        status.write(f"❌ `{file_name}` — PDF processing error: {str(e)}")
+                    except (EmptyPDFError, EncryptedPDFError, CorruptPDFError, PDFLoaderError, InvalidPDFError) as e:
+                        safe_log_exception(logger, f"Ingestion error for {file_name}", e)
+                        status.write(f"❌ `{file_name}` — {translate_exception_to_user_message(e, context='pdf')}")
                         summary_stats["failed"] += 1
                     except (GeminiEmbedderError, MissingAPIKeyError) as e:
-                        status.write(f"❌ `{file_name}` — Embedding API error: {str(e)}")
+                        safe_log_exception(logger, f"Embedding API error for {file_name}", e)
+                        status.write(f"❌ `{file_name}` — {translate_exception_to_user_message(e, context='embedding')}")
                         summary_stats["failed"] += 1
                     except VectorStoreError as e:
-                        status.write(f"❌ `{file_name}` — Vector store error: {str(e)}")
+                        safe_log_exception(logger, f"Vector store error for {file_name}", e)
+                        status.write(f"❌ `{file_name}` — {translate_exception_to_user_message(e, context='vectorstore')}")
                         summary_stats["failed"] += 1
                     except Exception as e:
-                        status.write(f"❌ `{file_name}` — Unexpected error: {str(e)}")
+                        safe_log_exception(logger, f"Unexpected ingestion error for {file_name}", e)
+                        status.write(f"❌ `{file_name}` — {translate_exception_to_user_message(e, context='ingestion')}")
                         summary_stats["failed"] += 1
 
                 status.update(
@@ -319,7 +351,7 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
     conversation = st.session_state.get("conversation")
 
     if indexed_count == 0:
-        st.info("ℹ️ No documents indexed yet. Upload and index PDF document(s) above to begin chatting.")
+        st.info("No documents indexed yet. Upload one or more PDFs above to start asking questions.")
 
     # 1. Render Existing Conversation History
     messages = conversation.get_messages() if conversation else []
@@ -327,9 +359,9 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
         if indexed_count > 0:
             st.markdown(
                 """
-                <div style="text-align: center; padding: 2.5rem 1rem; color: #94A3B8; background: #0F172A; border-radius: 8px; border: 1px dashed #334155; margin-bottom: 1.5rem;">
-                    <h4 style="color: #F8FAFC; margin-bottom: 0.5rem;">💬 Start a conversation</h4>
-                    <p style="margin: 0; font-size: 0.95rem;">Ask a question about your indexed documents below.</p>
+                <div class="empty-state-card">
+                    <div class="empty-state-title">💬 Ask a question about your indexed documents</div>
+                    <p class="empty-state-subtitle">ContextIQ retrieves relevant evidence passages and generates cited answers.</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -369,7 +401,9 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
 
     # 2. Chat Input Interaction
     prompt = st.chat_input(
-        "Ask a question about your documents...",
+        "Upload a document above to begin chatting..."
+        if indexed_count == 0
+        else "Ask a question about your documents...",
         disabled=(indexed_count == 0),
     )
 
@@ -459,10 +493,12 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
                     total_chars_compressed=getattr(response, "total_chars_compressed", None),
                 )
 
-            except (RetrieverError, GeminiGenerationError, RAGPipelineError) as e:
-                st.error(f"RAG Error: {str(e)}")
+            except (RetrieverError, GeminiGenerationError, RAGPipelineError, MissingAPIKeyError) as e:
+                safe_log_exception(logger, "Chat turn RAG error", e)
+                st.error(translate_exception_to_user_message(e, context="generation"))
             except Exception as e:
-                st.error(f"Unexpected generation error: {str(e)}")
+                safe_log_exception(logger, "Unexpected chat turn error", e)
+                st.error(translate_exception_to_user_message(e, context="generation"))
 
 
 def main():
@@ -479,14 +515,15 @@ def main():
     # Verify API configuration
     if not is_api_key_configured():
         st.error(
-            "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your `.env` file to enable embeddings and generation."
+            "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your `.env` file or Streamlit secrets to enable embeddings and generation."
         )
 
     # Initialize Vector Store
     try:
         vector_store = get_vector_store()
     except Exception as e:
-        st.error(f"Failed to initialize vector database: {str(e)}")
+        safe_log_exception(logger, "Vector store initialization error", e)
+        st.error(translate_exception_to_user_message(e, context="vectorstore"))
         vector_store = None
 
     # Maintain Session State defaults

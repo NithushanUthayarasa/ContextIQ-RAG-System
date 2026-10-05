@@ -268,7 +268,7 @@ def render_evaluation_dashboard(
                 </div>
                 <div>
                     <span class="status-badge online" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">
-                        ● 100% Offline Benchmark (Zero Gemini API Cost)
+                        ● 100% Offline Benchmark (Deterministic Verification)
                     </span>
                 </div>
             </div>
@@ -282,6 +282,12 @@ def render_evaluation_dashboard(
         f"**Configurations:** `{summary['total_configs']}` • "
         f"**Test Questions:** `{summary['queries_count']}` (12 answerable + 3 negative refusals) • "
         f"**Dataset:** `SE3090 Lecture 04 Database Auth Integration.pdf`"
+    )
+
+    st.info(
+        "📌 **Evaluation Scope:** This benchmark evaluates 15 curated questions on a university slide-deck PDF "
+        "(`SE3090 Lecture 04 Database Auth Integration.pdf`). Results reflect this specific corpus structure and should "
+        "not be generalized as universal performance across arbitrary document domains."
     )
 
     # 2. Executive KPI Cards
@@ -329,6 +335,19 @@ def render_evaluation_dashboard(
     # 3. Ablation Comparison Matrix
     st.markdown("### 📋 Layer Ablation Comparison Matrix")
     st.caption("Quantitative comparison across all 5 progressive architectural layers:")
+
+    with st.expander("ℹ️ Metric Definitions & Evaluation Methodology", expanded=False):
+        st.markdown(
+            """
+            - **Hit@K**: Proportion of evaluated queries where at least one ground-truth evidence chunk appears in the top-K retrieved results.
+            - **MRR@K (Mean Reciprocal Rank)**: Average reciprocal rank ($1/\\text{rank}$) of the first relevant chunk, measuring ranking quality.
+            - **Recall@5**: Proportion of all ground-truth evidence chunks successfully retrieved within the top-5 candidates.
+            - **Context Reduction (%)**: Percentage reduction in prompt context character count compared to uncompressed baseline context.
+            - **Evidence Retention Rate**: Fraction of ground-truth evidence sentences preserved after extractive context compression.
+            - **Citation Precision**: Proportion of generated citations that accurately reference pages containing relevant ground-truth evidence.
+            - **Refusal Accuracy**: Accuracy in refusing unanswerable/out-of-scope queries without hallucination or false citations.
+            """
+        )
 
     df_comparison = build_comparison_dataframe(results_data)
     display_cols = [

@@ -11,6 +11,7 @@ from app.config import (
     GEMINI_API_KEY,
     EMBEDDING_MODEL_NAME,
     EMBEDDING_DIMENSION,
+    get_gemini_api_key,
     is_api_key_configured,
 )
 from app.ingestion.chunker import DocumentChunk
@@ -42,7 +43,7 @@ class GeminiEmbedder:
         model_name: Optional[str] = None,
         dimension: Optional[int] = None,
     ):
-        self.api_key = api_key if api_key is not None else GEMINI_API_KEY
+        self.api_key = api_key if api_key is not None else get_gemini_api_key()
         if not self.api_key or not self.api_key.strip() or self.api_key.startswith("your_"):
             raise MissingAPIKeyError(
                 "Gemini API key is missing or invalid. Please configure GEMINI_API_KEY in your .env file."

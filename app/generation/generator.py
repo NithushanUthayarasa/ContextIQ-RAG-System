@@ -11,6 +11,7 @@ from app.config import (
     GEMINI_API_KEY,
     GENERATION_MODEL_NAME,
     MAX_CONTEXT_CHARACTERS,
+    get_gemini_api_key,
     is_api_key_configured,
 )
 from app.retrieval.retriever import RetrievedChunk
@@ -53,7 +54,7 @@ class GeminiGenerator:
         model_name: Optional[str] = None,
         max_context_chars: Optional[int] = None,
     ):
-        self.api_key = api_key if api_key is not None else GEMINI_API_KEY
+        self.api_key = api_key if api_key is not None else get_gemini_api_key()
         if not self.api_key or not self.api_key.strip() or self.api_key.startswith("your_"):
             raise GeminiGenerationError(
                 "Gemini API key is missing or invalid. Please configure GEMINI_API_KEY in .env."

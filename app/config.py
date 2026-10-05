@@ -17,6 +17,15 @@ load_dotenv(dotenv_path=ENV_PATH)
 # Gemini API Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Fallback to Streamlit secrets if running inside Streamlit Cloud
+if not GEMINI_API_KEY or GEMINI_API_KEY.startswith("your_"):
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            GEMINI_API_KEY = str(st.secrets["GEMINI_API_KEY"]).strip()
+    except Exception:
+        pass
+
 # Model Configurations
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "gemini-embedding-001")
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", 768))
@@ -90,15 +99,46 @@ except Exception:
 
 # Storage Directories
 DATA_DIR = BASE_DIR / "data"
-UPLOAD_DIR = DATA_DIR / "uploads"
-CHROMA_PERSIST_DIR = BASE_DIR / "chroma_db"
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(DATA_DIR / "uploads")))
+CHROMA_PERSIST_DIR = Path(os.getenv("CHROMA_PERSIST_DIR", str(BASE_DIR / "chroma_db")))
 CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "contextiq_documents")
 
 # Ensure runtime directories exist
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    pass
+
+
+def get_gemini_api_key() -> str:
+    """
+    Returns the configured Gemini API key, checking environment variables
+    and falling back to Streamlit secrets (st.secrets["GEMINI_API_KEY"]).
+    """
+    global GEMINI_API_KEY
+    if GEMINI_API_KEY and not GEMINI_API_KEY.startswith("your_"):
+        return GEMINI_API_KEY
+
+    env_key = os.getenv("GEMINI_API_KEY", "")
+    if env_key and not env_key.startswith("your_"):
+        GEMINI_API_KEY = env_key
+        return GEMINI_API_KEY
+
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            secret_key = str(st.secrets["GEMINI_API_KEY"]).strip()
+            if secret_key and not secret_key.startswith("your_"):
+                GEMINI_API_KEY = secret_key
+                return GEMINI_API_KEY
+    except Exception:
+        pass
+
+    return GEMINI_API_KEY or ""
 
 
 def is_api_key_configured() -> bool:
     """Check if a non-empty Gemini API key is configured."""
-    return bool(GEMINI_API_KEY and GEMINI_API_KEY.strip() and not GEMINI_API_KEY.startswith("your_"))
+    key = get_gemini_api_key()
+    return bool(key and key.strip() and not key.startswith("your_"))
