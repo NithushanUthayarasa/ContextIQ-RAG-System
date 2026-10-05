@@ -4,6 +4,8 @@
 
 A Python-based document intelligence system that combines Retrieval-Augmented Generation, hybrid information retrieval, conversational query processing, and quantitative RAG evaluation for grounded question answering over multiple PDF documents.
 
+**Live Demo:** [https://contextiq-ai-rag.streamlit.app/](https://contextiq-ai-rag.streamlit.app/)
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/UI-Streamlit-red.svg)](https://streamlit.io/)
 [![Vector Database](https://img.shields.io/badge/Vector%20DB-ChromaDB-purple.svg)](https://www.trychroma.com/)
@@ -56,7 +58,7 @@ This evidence-first design reduces reliance on unsupported model knowledge and e
 - **Conversation Memory**: Tracks multi-turn dialogue history within a session-isolated window (up to 6 turns).
 - **Context-Aware Query Rewriting**: Reformulates follow-up queries and ambiguous pronouns into standalone search queries.
 - **Query Expansion**: Optional multi-query generation (up to 3 queries) to broaden vocabulary coverage across candidate pools.
-- **TF-IDF Reranking**: Optional candidate re-scoring ($3 \times \text{top\_k}$ pool) using lexical TF-IDF cosine similarity.
+- **TF-IDF Reranking**: Optional candidate re-scoring (Candidate pool: 3 × Top-K) using lexical TF-IDF cosine similarity.
 - **Parent Context Resolution**: Matches precise child chunks and substitutes enclosing parent sections for prompt context.
 - **Extractive Context Compression**: Selects the most query-relevant sentences per chunk in chronological order (default: max 7 sentences, threshold 0.05).
 - **Retrieval Inspector Drawer**: Collapsible UI component displaying raw chunks, distances, BM25 scores, and fusion ranks.
@@ -287,6 +289,8 @@ ContextIQ-RAG/
 │   ├── retrieval/                # Retriever (Semantic/BM25/Hybrid), TF-IDF reranker, compressor
 │   ├── ui/                       # Streamlit layout, inspection drawers, and badges
 │   └── vectorstore/              # ChromaDB persistent collection wrapper
+├── assets/
+│   └── contextiq_ui_overview.png # Application UI overview screenshot
 ├── evaluation/
 │   ├── README.md                 # Evaluation documentation and usage instructions
 │   ├── REPORT.md                 # Generated ablation benchmark report
@@ -296,8 +300,9 @@ ContextIQ-RAG/
 │   ├── dump_chunks.py            # Diagnostic chunk viewer
 │   ├── evaluate_retrieval.py     # CLI ablation benchmark runner
 │   └── list_chunks.py            # Document index summary utility
-├── tests/                        # 22 test modules (316 unit & integration tests)
+├── tests/                        # 27 test modules (369 unit & integration tests)
 ├── .env.example                  # Environment configuration template
+├── DEPLOYMENT.md                 # Streamlit Community Cloud deployment guide
 ├── requirements.txt              # Project dependencies
 ├── run.py                        # Streamlit application launcher
 └── README.md                     # Project documentation
@@ -358,23 +363,33 @@ Open `http://localhost:8501` in your browser.
 
 ## 13. Deployment — Streamlit Community Cloud
 
-ContextIQ is pre-configured for deployment to [Streamlit Community Cloud](https://streamlit.io/cloud):
+ContextIQ is **live and deployed** on [Streamlit Community Cloud](https://streamlit.io/cloud).
 
-1. **Merge Branch**: Merge the verified `feature/v2-rag` branch into `main`.
-2. **Connect Repository**: Sign in to Streamlit Community Cloud and select your repository.
-3. **Select Branch**: Choose `main`.
-4. **Specify Entrypoint**: Set the main file path to `app/main.py`.
-5. **Configure Secrets**: In **Advanced settings > Secrets**, configure your Gemini API key:
+**Live Application:** [https://contextiq-ai-rag.streamlit.app/](https://contextiq-ai-rag.streamlit.app/)
+
+### Production Configuration
+- **Hosting Platform**: Streamlit Community Cloud
+- **Production Branch**: `main`
+- **Application Entrypoint**: `app/main.py`
+- **Secret Management**: Google Gemini API credentials are configured securely using Streamlit Secrets (`st.secrets["GEMINI_API_KEY"]`). The API key is never committed or exposed on GitHub.
+- **Storage Characteristics**: Container filesystem storage (`data/uploads/` and `chroma_db/`) on Streamlit Community Cloud is ephemeral and may reset when the application sleeps, restarts, or redeploys. Uploaded documents and vectors are scoped per active user session.
+
+### Deployment Procedure Reference
+For reproducing or deploying this repository to Streamlit Community Cloud:
+
+1. **Connect Repository**: Sign in to Streamlit Community Cloud and select `NithushanUthayarasa/ContextIQ-RAG-System`.
+2. **Select Branch**: Choose `main`.
+3. **Specify Entrypoint**: Set the main file path to `app/main.py`.
+4. **Configure Secrets**: In **Advanced settings > Secrets**, configure the Gemini API key:
    ```toml
    GEMINI_API_KEY = "your_actual_gemini_api_key_here"
    ```
-6. **Deploy**: Click **Deploy**.
-7. **Smoke Test**: Verify document upload, chat turns with citations, Retrieval Inspector, Performance metrics, and the Evaluation Dashboard.
+5. **Deploy & Verify**: Click **Deploy**. Verify that document upload, multi-turn chat with source page citations, Retrieval Inspector, Performance drawer, and the Evaluation Dashboard function correctly.
 
 > [!NOTE]
-> - `.env` is for local workstation development only and is strictly excluded via `.gitignore`.
-> - Production cloud deployments obtain credentials securely via `st.secrets["GEMINI_API_KEY"]`.
-> - Local container storage (`data/uploads/` and `chroma_db/`) is ephemeral on Community Cloud and will reset when the application restarts or redeploys. For permanent multi-tenant vector storage, a hosted vector database can be configured.
+> - `.env` is strictly for local workstation development and is ignored by git (`.gitignore`).
+> - Production cloud deployments resolve credentials dynamically via `st.secrets["GEMINI_API_KEY"]`.
+> - Cloud local filesystem and vector storage is ephemeral and resets upon instance redeployment.
 
 ---
 
@@ -463,7 +478,7 @@ The codebase includes comprehensive unit and integration tests across all ingest
 python -m pytest -q
 ```
 
-*Current verified development state: **363 tests passing, 0 failures** (100% offline with zero external API calls).*
+*Current verified development state: **369 tests passing, 0 failures** (100% offline with zero external API calls).*
 
 ---
 
@@ -508,8 +523,7 @@ python -m pytest -q
 
 ## 22. UI Screenshots
 
-*(Visual captures will be added in Phase 15 Portfolio Polish)*
-
+![ContextIQ Production UI Overview](assets/contextiq_ui_overview.png)
 - **Multi-Document Upload**: Document staging, SHA-256 deduplication, and collection statistics.
 - **Chat & Grounded Citations**: Interactive chat view displaying answers with source and page badges.
 - **Retrieved Context Inspector**: Expandable drawer displaying retrieved chunks, similarity distances, BM25 scores, and fusion ranks.
@@ -529,3 +543,12 @@ ContextIQ demonstrates practical engineering across core AI and Information Retr
 - **Context Optimization**: Hierarchical parent/child chunking and extractive context compression for prompt efficiency.
 - **Empirical Evaluation**: Quantitative measurement of retrieval accuracy (Hit@K, MRR@K), context efficiency (reduction %, ERR), and citation precision.
 - **Software Engineering Rigor**: Decoupled module design, clean exception handling, and comprehensive automated testing.
+
+---
+
+## Author
+
+**Nithushan Uthayarasa**<br>
+BSc (Hons) in Information Technology<br>
+Specialization in Artificial Intelligence<br>
+Sri Lanka Institute of Information Technology (SLIIT)
