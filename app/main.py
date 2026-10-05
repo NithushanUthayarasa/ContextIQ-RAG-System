@@ -4,6 +4,7 @@ Main Streamlit Application Entrypoint
 """
 
 import hashlib
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import streamlit as st
@@ -214,7 +215,11 @@ def handle_chat_turn(
 
 # --- Caching Long-Lived Core Services ---
 @st.cache_resource(show_spinner=False)
-def get_vector_store() -> ChromaVectorStore:
+def get_vector_store(session_id: Optional[str] = None) -> ChromaVectorStore:
+    if session_id:
+        clean_id = "".join(c for c in session_id if c.isalnum() or c in ("_", "-"))
+        collection_name = f"ctx_{clean_id}"
+        return ChromaVectorStore(collection_name=collection_name)
     return ChromaVectorStore()
 
 
@@ -236,7 +241,11 @@ def get_query_rewriter() -> Optional[QueryRewriter]:
         return None
 
 
-def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str, Any]):
+def render_workspace(
+    vector_store: Optional[ChromaVectorStore],
+    config: Dict[str, Any],
+    upload_dir: Path = UPLOAD_DIR,
+):
     """
     Renders document ingestion, conversation history, and chat interaction interface.
     """
@@ -283,6 +292,7 @@ def render_workspace(vector_store: Optional[ChromaVectorStore], config: Dict[str
                             embedder=embedder,
                             chunk_size=config["chunk_size"],
                             chunk_overlap=config["chunk_overlap"],
+                            upload_dir=upload_dir,
                         )
 
                         if res["status"] == "skipped":
@@ -512,15 +522,21 @@ def main():
     apply_custom_styles()
     render_header()
 
+    # Initialize session identifier for isolated multi-tenant Chroma storage
+    if "session_id" not in st.session_state:
+        st.session_state["session_id"] = uuid.uuid4().hex[:12]
+    session_id = st.session_state["session_id"]
+    session_upload_dir = UPLOAD_DIR / session_id
+
     # Verify API configuration
     if not is_api_key_configured():
         st.error(
             "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your `.env` file or Streamlit secrets to enable embeddings and generation."
         )
 
-    # Initialize Vector Store
+    # Initialize Vector Store scoped to this user session
     try:
-        vector_store = get_vector_store()
+        vector_store = get_vector_store(session_id)
     except Exception as e:
         safe_log_exception(logger, "Vector store initialization error", e)
         st.error(translate_exception_to_user_message(e, context="vectorstore"))
@@ -557,7 +573,7 @@ def main():
     tab_chat, tab_eval = st.tabs(["💬 Workspace & Chat", "📊 Evaluation Dashboard"])
 
     with tab_chat:
-        render_workspace(vector_store, config)
+        render_workspace(vector_store, config, upload_dir=session_upload_dir)
 
     with tab_eval:
         render_evaluation_dashboard()
