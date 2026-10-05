@@ -52,6 +52,7 @@ class ChromaVectorStore:
         try:
             self.client = chromadb.PersistentClient(path=str(self.persist_dir))
             self.collection = self._get_or_create_collection()
+            self.parent_collection = self._get_or_create_parent_collection()
         except Exception as e:
             raise VectorStoreError(f"Failed to initialize ChromaDB client: {str(e)}") from e
 
@@ -61,6 +62,15 @@ class ChromaVectorStore:
         """
         return self.client.get_or_create_collection(
             name=self.collection_name,
+            metadata={"hnsw:space": "cosine"},
+        )
+
+    def _get_or_create_parent_collection(self):
+        """
+        Creates or retrieves the ChromaDB collection for parent section contexts.
+        """
+        return self.client.get_or_create_collection(
+            name=f"{self.collection_name}_parents",
             metadata={"hnsw:space": "cosine"},
         )
 
@@ -125,13 +135,18 @@ class ChromaVectorStore:
 
             ids.append(chunk.chunk_id)
             documents.append(chunk.text)
-            metadatas.append(
-                {
-                    "source": chunk.source,
-                    "page_number": int(chunk.page_number),
-                    "chunk_index": int(chunk.chunk_index),
-                }
-            )
+            meta: Dict[str, Any] = {
+                "source": chunk.source,
+                "page_number": int(chunk.page_number),
+                "chunk_index": int(chunk.chunk_index),
+            }
+            if chunk.document_id is not None:
+                meta["document_id"] = chunk.document_id
+            if getattr(chunk, "parent_id", None) is not None:
+                meta["parent_id"] = chunk.parent_id
+            if getattr(chunk, "parent_index", None) is not None:
+                meta["parent_index"] = int(chunk.parent_index)
+            metadatas.append(meta)
             clean_embeddings.append(float_emb)
 
         try:
@@ -145,6 +160,106 @@ class ChromaVectorStore:
             raise VectorStoreError(f"Failed to upsert chunks into ChromaDB: {str(e)}") from e
 
         return len(ids)
+
+    def add_parents(self, parents: List[Any]) -> int:
+        """
+        Stores parent sections in ChromaDB parent collection.
+        Uses zero dummy embeddings to avoid downloading any embedding models.
+
+        Args:
+            parents: List of ParentChunk objects or dicts.
+
+        Returns:
+            The number of parent chunks added/updated.
+        """
+        if not parents:
+            return 0
+
+        ids: List[str] = []
+        documents: List[str] = []
+        metadatas: List[Dict[str, Any]] = []
+        clean_embeddings: List[List[float]] = []
+
+        for p in parents:
+            pid = getattr(p, "parent_id", None) or (p.get("parent_id") if isinstance(p, dict) else None)
+            text = getattr(p, "text", None) or (p.get("text") if isinstance(p, dict) else None)
+            source = getattr(p, "source", None) or (p.get("source") if isinstance(p, dict) else "unknown")
+            page = getattr(p, "page_number", None) or (p.get("page_number") if isinstance(p, dict) else 1)
+            p_idx = getattr(p, "parent_index", None) or (p.get("parent_index") if isinstance(p, dict) else 0)
+            doc_id = getattr(p, "document_id", None) or (p.get("document_id") if isinstance(p, dict) else None)
+
+            if not pid or not text:
+                continue
+
+            ids.append(pid)
+            documents.append(text)
+            meta: Dict[str, Any] = {
+                "source": source,
+                "page_number": int(page),
+                "parent_index": int(p_idx),
+            }
+            if doc_id:
+                meta["document_id"] = doc_id
+            metadatas.append(meta)
+            clean_embeddings.append([0.0] * self.expected_dimension)
+
+        if not ids:
+            return 0
+
+        try:
+            self.parent_collection.upsert(
+                ids=ids,
+                documents=documents,
+                embeddings=clean_embeddings,
+                metadatas=metadatas,
+            )
+        except Exception as e:
+            raise VectorStoreError(f"Failed to upsert parent chunks into ChromaDB: {str(e)}") from e
+
+        return len(ids)
+
+    def get_parents(self, parent_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetches parent sections by parent_ids.
+        Returns a dictionary mapping parent_id -> dict with keys:
+        parent_id, text, source, page_number, parent_index, document_id.
+        """
+        if not parent_ids:
+            return {}
+        try:
+            res = self.parent_collection.get(ids=parent_ids)
+            ids = res.get("ids", [])
+            docs = res.get("documents", [])
+            metas = res.get("metadatas", [])
+            mapping: Dict[str, Dict[str, Any]] = {}
+            for i, pid in enumerate(ids):
+                text = docs[i] if i < len(docs) else ""
+                meta = metas[i] if i < len(metas) and metas[i] else {}
+                mapping[pid] = {
+                    "parent_id": pid,
+                    "text": text,
+                    "source": meta.get("source", "unknown"),
+                    "page_number": int(meta.get("page_number", 1)),
+                    "parent_index": int(meta.get("parent_index", 0)),
+                    "document_id": meta.get("document_id"),
+                }
+            return mapping
+        except Exception:
+            return {}
+
+    def get_parent(self, parent_id: str) -> Optional[Dict[str, Any]]:
+        """Fetches a single parent section by parent_id."""
+        if not parent_id:
+            return None
+        res = self.get_parents([parent_id])
+        return res.get(parent_id)
+
+    def count_parents(self) -> int:
+        """Returns the total number of parent sections stored in ChromaDB."""
+        try:
+            return self.parent_collection.count()
+        except Exception:
+            return 0
 
     def count(self) -> int:
         """Returns the total number of document chunks currently stored in the collection."""
@@ -198,8 +313,162 @@ class ChromaVectorStore:
             raise VectorStoreError(f"ChromaDB similarity query failed: {str(e)}") from e
 
     def delete_by_source(self, source: str) -> None:
-        """Deletes all chunks associated with a specific document source filename."""
+        """Deletes all chunks and parent sections associated with a specific document source filename."""
         self.collection.delete(where={"source": source})
+        try:
+            self.parent_collection.delete(where={"source": source})
+        except Exception:
+            pass
+
+    def has_document(self, document_id: str) -> bool:
+        """
+        Checks whether at least one chunk exists with the given document_id.
+
+        Args:
+            document_id: Unique content hash of the document to check.
+
+        Returns:
+            True if the document exists in the store, False otherwise.
+        """
+        if not document_id or not isinstance(document_id, str) or not document_id.strip():
+            return False
+
+        clean_doc_id = document_id.strip()
+        try:
+            res = self.collection.get(where={"document_id": clean_doc_id}, limit=1)
+            ids = res.get("ids", [])
+            return len(ids) > 0
+        except Exception as e:
+            raise VectorStoreError(f"Failed to check document existence: {str(e)}") from e
+
+    def delete_by_document_id(self, document_id: str) -> int:
+        """
+        Deletes all chunks and parent sections belonging to a specific document_id.
+
+        Args:
+            document_id: Unique content hash of the document to delete.
+
+        Returns:
+            The number of chunks deleted.
+        """
+        if not document_id or not isinstance(document_id, str) or not document_id.strip():
+            return 0
+
+        clean_doc_id = document_id.strip()
+        try:
+            self.parent_collection.delete(where={"document_id": clean_doc_id})
+        except Exception:
+            pass
+
+        try:
+            matching = self.collection.get(where={"document_id": clean_doc_id})
+            chunk_ids = matching.get("ids", [])
+            if not chunk_ids:
+                return 0
+
+            self.collection.delete(where={"document_id": clean_doc_id})
+            return len(chunk_ids)
+        except Exception as e:
+            raise VectorStoreError(f"Failed to delete document chunks: {str(e)}") from e
+
+    def list_indexed_documents(self) -> List[Dict[str, Any]]:
+        """
+        Returns document-level summary information derived from ChromaDB metadata.
+        Groups by unique document_id.
+
+        Returns:
+            List of dictionaries with keys:
+            - document_id: Unique document identifier.
+            - source: Original filename or document label.
+            - page_count: Total distinct page numbers in this document.
+            - chunk_count: Total number of chunks indexed for this document.
+        """
+        if self.count() == 0:
+            return []
+
+        try:
+            data = self.collection.get(include=["metadatas"])
+        except Exception as e:
+            raise VectorStoreError(f"Failed to retrieve metadata from ChromaDB: {str(e)}") from e
+
+        metadatas = data.get("metadatas", [])
+        if not metadatas:
+            return []
+
+        docs_map: Dict[str, Dict[str, Any]] = {}
+
+        for meta in metadatas:
+            if not meta:
+                continue
+
+            doc_id = meta.get("document_id")
+            source = meta.get("source", "unknown")
+            if not doc_id:
+                # Graceful fallback for legacy V1 records lacking document_id
+                doc_id = f"legacy_{source}"
+
+            page_num = meta.get("page_number")
+
+            if doc_id not in docs_map:
+                docs_map[doc_id] = {
+                    "document_id": doc_id,
+                    "source": source,
+                    "pages": set(),
+                    "chunk_count": 0,
+                }
+
+            if page_num is not None:
+                docs_map[doc_id]["pages"].add(page_num)
+            docs_map[doc_id]["chunk_count"] += 1
+
+        result = [
+            {
+                "document_id": doc_id,
+                "source": info["source"],
+                "page_count": len(info["pages"]),
+                "chunk_count": info["chunk_count"],
+            }
+            for doc_id, info in docs_map.items()
+        ]
+
+        # Deterministic stable ordering: source + document_id
+        result.sort(key=lambda d: (d["source"], d["document_id"]))
+        return result
+
+    def get_all_chunks(self) -> List[Dict[str, Any]]:
+        """
+        Retrieves all chunks stored in the collection including chunk_id, text, and metadata.
+        Useful for building or synchronizing external indexes like BM25.
+
+        Returns:
+            List of dictionaries with keys:
+            - chunk_id: str
+            - text: str
+            - metadata: Dict[str, Any]
+        """
+        if self.count() == 0:
+            return []
+
+        try:
+            data = self.collection.get(include=["documents", "metadatas"])
+            ids = data.get("ids", [])
+            documents = data.get("documents", [])
+            metadatas = data.get("metadatas", [])
+
+            results: List[Dict[str, Any]] = []
+            for i, chunk_id in enumerate(ids):
+                text = documents[i] if i < len(documents) else ""
+                meta = metadatas[i] if i < len(metadatas) and metadatas[i] is not None else {}
+                results.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "text": text,
+                        "metadata": meta,
+                    }
+                )
+            return results
+        except Exception as e:
+            raise VectorStoreError(f"Failed to retrieve all chunks from ChromaDB: {str(e)}") from e
 
     def reset(self) -> None:
         """
@@ -210,7 +479,12 @@ class ChromaVectorStore:
             self.client.delete_collection(name=self.collection_name)
         except Exception:
             pass
+        try:
+            self.client.delete_collection(name=f"{self.collection_name}_parents")
+        except Exception:
+            pass
         self.collection = self._get_or_create_collection()
+        self.parent_collection = self._get_or_create_parent_collection()
 
     @property
     def stats(self) -> Dict[str, Any]:

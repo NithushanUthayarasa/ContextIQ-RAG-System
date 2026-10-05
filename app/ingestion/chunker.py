@@ -20,6 +20,9 @@ class DocumentChunk:
     source: str
     page_number: int
     chunk_index: int
+    document_id: Optional[str] = None
+    parent_id: Optional[str] = None
+    parent_index: Optional[int] = None
 
     def __post_init__(self):
         if not self.chunk_id:
@@ -30,6 +33,15 @@ class DocumentChunk:
             raise ValueError("page_number must be >= 1.")
         if self.chunk_index < 0:
             raise ValueError("chunk_index must be >= 0.")
+        if self.document_id is not None:
+            if not isinstance(self.document_id, str) or not self.document_id.strip():
+                raise ValueError("document_id must be a non-empty string when provided.")
+        if self.parent_id is not None:
+            if not isinstance(self.parent_id, str) or not self.parent_id.strip():
+                raise ValueError("parent_id must be a non-empty string when provided.")
+        if self.parent_index is not None:
+            if not isinstance(self.parent_index, int) or self.parent_index < 0:
+                raise ValueError("parent_index must be an integer >= 0.")
 
 
 class TextChunker:
@@ -57,17 +69,33 @@ class TextChunker:
         self.step_size = chunk_size - chunk_overlap
 
     @staticmethod
-    def generate_chunk_id(source: str, page_number: int, chunk_index: int) -> str:
+    def generate_chunk_id(
+        source: str,
+        page_number: int,
+        chunk_index: int,
+        document_id: Optional[str] = None,
+    ) -> str:
         """
-        Generates a deterministic chunk identifier: {sanitized_stem}_p{page}_c{index}
-        Example: research_paper.pdf, page 1, chunk 0 -> research_paper_p1_c0
+        Generates a deterministic chunk identifier.
+        When document_id is provided, uses: {document_id}_p{page}_c{index}
+        Otherwise preserves V1 stem formatting: {sanitized_stem}_p{page}_c{index}
         """
+        if document_id is not None:
+            if not isinstance(document_id, str) or not document_id.strip():
+                raise ValueError("document_id must be a non-empty string when provided.")
+            clean_doc_id = document_id.strip()
+            return f"{clean_doc_id}_p{page_number}_c{chunk_index}"
+
         stem = Path(source).stem if source else "doc"
         # Sanitize filename stem to contain only alphanumeric and underscores/hyphens
         clean_stem = re.sub(r"[^\w\-]", "_", stem)
         return f"{clean_stem}_p{page_number}_c{chunk_index}"
 
-    def split_page(self, page: DocumentPage) -> List[DocumentChunk]:
+    def split_page(
+        self,
+        page: DocumentPage,
+        document_id: Optional[str] = None,
+    ) -> List[DocumentChunk]:
         """
         Splits a single DocumentPage into overlapping DocumentChunk objects.
         Empty or whitespace-only pages yield an empty list.
@@ -82,7 +110,12 @@ class TextChunker:
 
         # If page text is smaller than or equal to chunk_size, return a single chunk
         if text_len <= self.chunk_size:
-            chunk_id = self.generate_chunk_id(page.source, page.page_number, chunk_index)
+            chunk_id = self.generate_chunk_id(
+                source=page.source,
+                page_number=page.page_number,
+                chunk_index=chunk_index,
+                document_id=document_id,
+            )
             chunks.append(
                 DocumentChunk(
                     chunk_id=chunk_id,
@@ -90,6 +123,7 @@ class TextChunker:
                     source=page.source,
                     page_number=page.page_number,
                     chunk_index=chunk_index,
+                    document_id=document_id,
                 )
             )
             return chunks
@@ -100,7 +134,12 @@ class TextChunker:
             chunk_text = text[start:end].strip()
 
             if chunk_text:
-                chunk_id = self.generate_chunk_id(page.source, page.page_number, chunk_index)
+                chunk_id = self.generate_chunk_id(
+                    source=page.source,
+                    page_number=page.page_number,
+                    chunk_index=chunk_index,
+                    document_id=document_id,
+                )
                 chunks.append(
                     DocumentChunk(
                         chunk_id=chunk_id,
@@ -108,6 +147,7 @@ class TextChunker:
                         source=page.source,
                         page_number=page.page_number,
                         chunk_index=chunk_index,
+                        document_id=document_id,
                     )
                 )
                 chunk_index += 1
@@ -119,13 +159,17 @@ class TextChunker:
 
         return chunks
 
-    def split_pages(self, pages: List[DocumentPage]) -> List[DocumentChunk]:
+    def split_pages(
+        self,
+        pages: List[DocumentPage],
+        document_id: Optional[str] = None,
+    ) -> List[DocumentChunk]:
         """
         Processes a list of DocumentPages and returns all resulting DocumentChunks.
         Pages with no text are skipped.
         """
         all_chunks: List[DocumentChunk] = []
         for page in pages:
-            page_chunks = self.split_page(page)
+            page_chunks = self.split_page(page, document_id=document_id)
             all_chunks.extend(page_chunks)
         return all_chunks

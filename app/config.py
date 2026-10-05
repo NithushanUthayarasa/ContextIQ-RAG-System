@@ -17,6 +17,15 @@ load_dotenv(dotenv_path=ENV_PATH)
 # Gemini API Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Fallback to Streamlit secrets if running inside Streamlit Cloud
+if not GEMINI_API_KEY or GEMINI_API_KEY.startswith("your_"):
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            GEMINI_API_KEY = str(st.secrets["GEMINI_API_KEY"]).strip()
+    except Exception:
+        pass
+
 # Model Configurations
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "gemini-embedding-001")
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", 768))
@@ -27,18 +36,109 @@ MAX_CONTEXT_CHARACTERS = int(os.getenv("MAX_CONTEXT_CHARACTERS", 12000))
 DEFAULT_CHUNK_SIZE = int(os.getenv("DEFAULT_CHUNK_SIZE", 1000))
 DEFAULT_CHUNK_OVERLAP = int(os.getenv("DEFAULT_CHUNK_OVERLAP", 200))
 DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", 5))
+DEFAULT_MAX_REWRITE_HISTORY = int(os.getenv("DEFAULT_MAX_REWRITE_HISTORY", 6))
+
+# Minimum Cosine Similarity Threshold for Retrieval Filtering
+# Note: This is an initial baseline (0.50) and should be tuned using evaluation data.
+DEFAULT_MIN_SIMILARITY = float(os.getenv("DEFAULT_MIN_SIMILARITY", "0.50"))
+MIN_RETRIEVAL_SIMILARITY = DEFAULT_MIN_SIMILARITY
+
+# Hybrid Retrieval Hyperparameters
+DEFAULT_RETRIEVAL_MODE = os.getenv("DEFAULT_RETRIEVAL_MODE", "semantic")
+DEFAULT_RRF_K = int(os.getenv("DEFAULT_RRF_K", 60))
+DEFAULT_HYBRID_CANDIDATE_MULTIPLIER = int(os.getenv("DEFAULT_HYBRID_CANDIDATE_MULTIPLIER", 2))
+
+# Reranker Configuration
+# RERANKER_ENABLED: set to "true" / "1" in .env to enable reranking by default.
+# RERANKER_CANDIDATE_MULTIPLIER: candidate pool = top_k * multiplier before reranking.
+RERANKER_ENABLED = os.getenv("RERANKER_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+RERANKER_CANDIDATE_MULTIPLIER = int(os.getenv("RERANKER_CANDIDATE_MULTIPLIER", 3))
+
+# Query Expansion Configuration
+QUERY_EXPANSION_ENABLED = os.getenv("QUERY_EXPANSION_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+# Validate that QUERY_EXPANSION_MAX_QUERIES is a positive integer; raise error if invalid.
+try:
+    _qe_max = int(os.getenv("QUERY_EXPANSION_MAX_QUERIES", "3"))
+    if _qe_max < 1:
+        raise ValueError
+    QUERY_EXPANSION_MAX_QUERIES = _qe_max
+except Exception:
+    raise ValueError("QUERY_EXPANSION_MAX_QUERIES must be an integer >= 1")
+# Parent/Child Retrieval Configuration
+PARENT_CHILD_ENABLED = os.getenv("PARENT_CHILD_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+DEFAULT_PARENT_CHUNK_SIZE = int(os.getenv("DEFAULT_PARENT_CHUNK_SIZE", 2000))
+DEFAULT_PARENT_CHUNK_OVERLAP = int(os.getenv("DEFAULT_PARENT_CHUNK_OVERLAP", 200))
+
+# Context Compression Configuration
+CONTEXT_COMPRESSION_ENABLED = os.getenv("CONTEXT_COMPRESSION_ENABLED", "false").strip().lower() in ("true", "1", "yes")
+
+try:
+    _comp_max_sent = int(os.getenv("COMPRESSION_MAX_SENTENCES", "7"))
+    if _comp_max_sent < 1:
+        raise ValueError
+    COMPRESSION_MAX_SENTENCES = _comp_max_sent
+except Exception:
+    raise ValueError("COMPRESSION_MAX_SENTENCES must be an integer >= 1")
+
+try:
+    _comp_sim_thresh = float(os.getenv("COMPRESSION_SIMILARITY_THRESHOLD", "0.05"))
+    if not (0.0 <= _comp_sim_thresh <= 1.0):
+        raise ValueError
+    COMPRESSION_SIMILARITY_THRESHOLD = _comp_sim_thresh
+except Exception:
+    raise ValueError("COMPRESSION_SIMILARITY_THRESHOLD must be a float between 0.0 and 1.0")
+
+try:
+    _comp_min_len = int(os.getenv("COMPRESSION_MIN_SENTENCE_LEN", "15"))
+    if _comp_min_len < 1:
+        raise ValueError
+    COMPRESSION_MIN_SENTENCE_LEN = _comp_min_len
+except Exception:
+    raise ValueError("COMPRESSION_MIN_SENTENCE_LEN must be an integer >= 1")
+
 
 # Storage Directories
 DATA_DIR = BASE_DIR / "data"
-UPLOAD_DIR = DATA_DIR / "uploads"
-CHROMA_PERSIST_DIR = BASE_DIR / "chroma_db"
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(DATA_DIR / "uploads")))
+CHROMA_PERSIST_DIR = Path(os.getenv("CHROMA_PERSIST_DIR", str(BASE_DIR / "chroma_db")))
 CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "contextiq_documents")
 
 # Ensure runtime directories exist
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    pass
+
+
+def get_gemini_api_key() -> str:
+    """
+    Returns the configured Gemini API key, checking environment variables
+    and falling back to Streamlit secrets (st.secrets["GEMINI_API_KEY"]).
+    """
+    global GEMINI_API_KEY
+    if GEMINI_API_KEY and not GEMINI_API_KEY.startswith("your_"):
+        return GEMINI_API_KEY
+
+    env_key = os.getenv("GEMINI_API_KEY", "")
+    if env_key and not env_key.startswith("your_"):
+        GEMINI_API_KEY = env_key
+        return GEMINI_API_KEY
+
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            secret_key = str(st.secrets["GEMINI_API_KEY"]).strip()
+            if secret_key and not secret_key.startswith("your_"):
+                GEMINI_API_KEY = secret_key
+                return GEMINI_API_KEY
+    except Exception:
+        pass
+
+    return GEMINI_API_KEY or ""
 
 
 def is_api_key_configured() -> bool:
     """Check if a non-empty Gemini API key is configured."""
-    return bool(GEMINI_API_KEY and GEMINI_API_KEY.strip() and not GEMINI_API_KEY.startswith("your_"))
+    key = get_gemini_api_key()
+    return bool(key and key.strip() and not key.startswith("your_"))

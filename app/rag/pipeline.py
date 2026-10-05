@@ -1,12 +1,30 @@
 """
 ContextIQ - Central RAG Pipeline Orchestrator
 Coordinates retrieval of relevant document chunks and generation of grounded answers.
+
+Pipeline modes
+--------------
+Reranking disabled (default):
+    Query → Retriever(top_k) → Generator
+
+Reranking enabled:
+    Query → Retriever(candidate_k) → Reranker(top_k) → Generator
+
+The original user question is always passed to the generator.
+The rewritten retrieval query is used for both retrieval and reranking.
 """
 
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from app.config import (
+    CONTEXT_COMPRESSION_ENABLED,
+    PARENT_CHILD_ENABLED,
+    QUERY_EXPANSION_MAX_QUERIES,
+)
 from app.generation.generator import GeminiGenerator, EmptyQuestionError
+from app.retrieval.parent_context import resolve_parent_context
 from app.retrieval.retriever import RetrievedChunk, Retriever
 
 
@@ -16,21 +34,92 @@ class RAGPipelineError(Exception):
 
 
 @dataclass
+class PipelineTimings:
+    """Detailed runtime execution latency measurements (in milliseconds) for RAG pipeline stages."""
+    total_ms: float = 0.0
+    query_rewrite_ms: Optional[float] = None
+    query_expansion_ms: Optional[float] = None
+    retrieval_ms: float = 0.0
+    reranking_ms: Optional[float] = None
+    parent_resolution_ms: Optional[float] = None
+    compression_ms: Optional[float] = None
+    generation_ms: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Returns non-null timing metrics formatted as a dictionary."""
+        d: Dict[str, Any] = {
+            "total_ms": self.total_ms,
+            "retrieval_ms": self.retrieval_ms,
+            "generation_ms": self.generation_ms,
+        }
+        if self.query_rewrite_ms is not None:
+            d["query_rewrite_ms"] = self.query_rewrite_ms
+        if self.query_expansion_ms is not None:
+            d["query_expansion_ms"] = self.query_expansion_ms
+        if self.reranking_ms is not None:
+            d["reranking_ms"] = self.reranking_ms
+        if self.parent_resolution_ms is not None:
+            d["parent_resolution_ms"] = self.parent_resolution_ms
+        if self.compression_ms is not None:
+            d["compression_ms"] = self.compression_ms
+        return d
+
+
+@dataclass
 class RAGResponse:
     """Structured response from the RAG pipeline containing answer, sources, and context."""
     answer: str
     sources: List[Dict[str, Any]]
     retrieved_chunks: List[RetrievedChunk]
     query: str
+    retrieval_query: Optional[str] = None
+    similarity_threshold: Optional[float] = None
+    document_ids: Optional[List[str]] = None
+    retrieval_mode: Optional[str] = None
+    # Reranking transparency fields
+    reranking_enabled: bool = False
+    candidates_retrieved: Optional[int] = None
+    # Query expansion transparency fields
+    query_expansion_enabled: bool = False
+    expanded_queries: List[str] = field(default_factory=list)
+    # Parent/Child transparency fields
+    parent_child_enabled: bool = False
+    child_chunks_retrieved: Optional[int] = None
+    parent_contexts_used: Optional[int] = None
+    # Context compression transparency fields
+    context_compression_enabled: bool = False
+    total_chars_original: Optional[int] = None
+    total_chars_compressed: Optional[int] = None
+    # Latency instrumentation
+    timings: Optional[PipelineTimings] = None
+
+    def __post_init__(self):
+        if self.retrieval_query is None:
+            self.retrieval_query = self.query
 
 
 class RAGPipeline:
     """
-    Coordinates semantic retrieval and LLM generation through dependency injection.
-    Decoupled from specific vector stores or generative models.
+    Coordinates semantic/hybrid retrieval, optional reranking, parent context resolution,
+    and LLM generation through dependency injection.
+
+    Decoupled from specific vector stores, generative models, query rewriters,
+    and rerankers.
     """
 
-    def __init__(self, retriever: Retriever, generator: GeminiGenerator):
+    def __init__(
+        self,
+        retriever: Retriever,
+        generator: GeminiGenerator,
+        query_rewriter: Optional[Any] = None,
+        reranker: Optional[Any] = None,
+        reranker_candidate_multiplier: int = 3,
+        query_expander: Optional[Any] = None,
+        parent_store: Optional[Any] = None,
+        parent_child_enabled: bool = PARENT_CHILD_ENABLED,
+        compressor: Optional[Any] = None,
+        context_compression_enabled: bool = CONTEXT_COMPRESSION_ENABLED,
+    ):
         if retriever is None:
             raise RAGPipelineError("A valid Retriever instance must be provided.")
         if generator is None:
@@ -38,6 +127,14 @@ class RAGPipeline:
 
         self.retriever = retriever
         self.generator = generator
+        self.query_rewriter = query_rewriter
+        self.reranker = reranker
+        self.reranker_candidate_multiplier = max(1, int(reranker_candidate_multiplier))
+        self.query_expander = query_expander
+        self.parent_store = parent_store
+        self.parent_child_enabled = bool(parent_child_enabled)
+        self.compressor = compressor
+        self.context_compression_enabled = bool(context_compression_enabled)
 
     @staticmethod
     def extract_sources(chunks: List[RetrievedChunk]) -> List[Dict[str, Any]]:
@@ -60,13 +157,28 @@ class RAGPipeline:
 
         return sources
 
-    def ask(self, question: str, top_k: Optional[int] = None) -> RAGResponse:
+    def ask(
+        self,
+        question: str,
+        top_k: Optional[int] = None,
+        conversation_messages: Optional[List[Any]] = None,
+        similarity_threshold: Optional[float] = None,
+        document_ids: Optional[List[str]] = None,
+        retrieval_mode: Optional[str] = None,
+        parent_child_enabled: Optional[bool] = None,
+        context_compression_enabled: Optional[bool] = None,
+    ) -> RAGResponse:
         """
         Executes the end-to-end RAG pipeline for a user question.
 
         Args:
             question: The user query string.
-            top_k: Number of relevant chunks to retrieve (optional override).
+            top_k: Number of final chunks to pass to the generator.
+            conversation_messages: Optional prior ChatMessage objects for query rewriting.
+            similarity_threshold: Optional minimum cosine similarity threshold override.
+            document_ids: Optional list of document_id strings to restrict retrieval scope.
+            retrieval_mode: Optional retrieval mode ("semantic", "bm25", "hybrid").
+            parent_child_enabled: Optional override for parent section context expansion.
 
         Returns:
             RAGResponse containing generated answer, cited sources, retrieved chunks, and query.
@@ -79,25 +191,207 @@ class RAGPipeline:
             raise EmptyQuestionError("Question must not be empty.")
 
         cleaned_question = question.strip()
+        t_pipeline_start = time.perf_counter()
 
-        # Step 1: Semantic retrieval
-        retrieved_chunks = self.retriever.retrieve(
-            query=cleaned_question,
-            top_k=top_k,
+        # Step 0: Context-aware query rewriting
+        query_rewrite_ms: Optional[float] = None
+        if self.query_rewriter is not None and conversation_messages:
+            t0 = time.perf_counter()
+            try:
+                retrieval_query = self.query_rewriter.rewrite_query(
+                    cleaned_question,
+                    conversation_messages=conversation_messages,
+                )
+            except Exception:
+                retrieval_query = cleaned_question
+            query_rewrite_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        else:
+            retrieval_query = cleaned_question
+
+        # Fallback safeguard: if rewrite produces empty or invalid text, use original question
+        if not retrieval_query or not retrieval_query.strip():
+            retrieval_query = cleaned_question
+
+        # Step 1: Query Expansion (optional)
+        query_expansion_enabled = self.query_expander is not None
+        expanded_queries = [retrieval_query]
+        query_expansion_ms: Optional[float] = None
+
+        if query_expansion_enabled:
+            t0 = time.perf_counter()
+            try:
+                expanded = self.query_expander.expand(
+                    retrieval_query,
+                    max_queries=QUERY_EXPANSION_MAX_QUERIES,
+                )
+                if expanded:
+                    # Ensure original query is first
+                    if retrieval_query not in expanded:
+                        expanded = [retrieval_query] + expanded
+                    else:
+                        expanded = [retrieval_query] + [q for q in expanded if q != retrieval_query]
+                    expanded_queries = expanded
+            except Exception:
+                expanded_queries = [retrieval_query]
+            query_expansion_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+
+        # Step 2: Retrieval
+        reranking_active = self.reranker is not None
+
+        if reranking_active:
+            final_k = top_k if top_k is not None else getattr(self.retriever, "default_top_k", 5)
+            candidate_k = final_k * self.reranker_candidate_multiplier
+        else:
+            final_k = top_k
+            candidate_k = top_k
+
+        # Retrieval for each expanded query
+        t0 = time.perf_counter()
+        all_candidates: List[RetrievedChunk] = []
+        for q in expanded_queries:
+            retrieve_kwargs: Dict[str, Any] = {"query": q, "top_k": candidate_k}
+            if similarity_threshold is not None:
+                retrieve_kwargs["similarity_threshold"] = similarity_threshold
+            if document_ids is not None:
+                retrieve_kwargs["document_ids"] = document_ids
+            if retrieval_mode is not None:
+                retrieve_kwargs["retrieval_mode"] = retrieval_mode
+
+            chunks = self.retriever.retrieve(**retrieve_kwargs)
+            all_candidates.extend(chunks)
+
+        # Deduplicate candidates, keeping strongest evidence per chunk_id
+        seen_ids: Dict[str, RetrievedChunk] = {}
+        for chunk in all_candidates:
+            cid = getattr(chunk, "chunk_id", None)
+            if cid in seen_ids:
+                prev = seen_ids[cid]
+                better = False
+                if chunk.distance is not None and prev.distance is not None:
+                    better = chunk.distance < prev.distance
+                elif chunk.cosine_similarity is not None and prev.cosine_similarity is not None:
+                    better = chunk.cosine_similarity > prev.cosine_similarity
+                elif getattr(chunk, "bm25_score", None) is not None and getattr(prev, "bm25_score", None) is not None:
+                    better = chunk.bm25_score > prev.bm25_score
+                elif getattr(chunk, "rrf_score", None) is not None and getattr(prev, "rrf_score", None) is not None:
+                    better = chunk.rrf_score > prev.rrf_score
+                if better:
+                    seen_ids[cid] = chunk
+            else:
+                seen_ids[cid] = chunk
+        deduped: List[RetrievedChunk] = list(seen_ids.values())
+        retrieval_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+
+        candidates_retrieved = len(deduped)
+
+        # Step 3: Candidate Reranking
+        reranking_ms: Optional[float] = None
+        if reranking_active and deduped:
+            t0 = time.perf_counter()
+            reranked_chunks = self.reranker.rerank(
+                query=retrieval_query,
+                candidates=deduped,
+                top_k=final_k,
+            )
+            reranking_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        else:
+            reranked_chunks = deduped[:final_k] if final_k is not None else deduped
+
+        # Step 4: Parent Context Resolution (optional)
+        is_parent_child = (
+            parent_child_enabled
+            if parent_child_enabled is not None
+            else self.parent_child_enabled
+        )
+        child_chunks_retrieved = len(deduped)
+        parent_resolution_ms: Optional[float] = None
+
+        if is_parent_child and reranked_chunks:
+            t0 = time.perf_counter()
+            p_store = self.parent_store or getattr(self.retriever, "vector_store", None)
+            final_chunks = resolve_parent_context(reranked_chunks, parent_store=p_store)
+            parent_contexts_used = len(final_chunks)
+            parent_resolution_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        else:
+            final_chunks = reranked_chunks
+            parent_contexts_used = None
+
+        # Step 5: Context Compression (optional)
+        is_compression = (
+            context_compression_enabled
+            if context_compression_enabled is not None
+            else self.context_compression_enabled
         )
 
-        # Step 2: Source deduplication
-        sources = self.extract_sources(retrieved_chunks)
+        total_chars_original: Optional[int] = None
+        total_chars_compressed: Optional[int] = None
+        compression_ms: Optional[float] = None
 
-        # Step 3: Grounded generation
+        if is_compression and self.compressor is not None and final_chunks:
+            t0 = time.perf_counter()
+            total_chars_original = sum(len(c.text) for c in final_chunks)
+            final_chunks = self.compressor.compress(
+                query=retrieval_query,
+                chunks=final_chunks,
+            )
+            total_chars_compressed = sum(len(c.text) for c in final_chunks)
+            compression_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        elif is_compression and final_chunks:
+            total_chars_original = sum(len(c.text) for c in final_chunks)
+            total_chars_compressed = total_chars_original
+
+        # Step 6: Generation
+        sources = self.extract_sources(final_chunks)
+        t0 = time.perf_counter()
         answer = self.generator.generate(
             question=cleaned_question,
-            retrieved_chunks=retrieved_chunks,
+            retrieved_chunks=final_chunks,
+        )
+        generation_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+
+        total_ms = round((time.perf_counter() - t_pipeline_start) * 1000.0, 2)
+
+        timings = PipelineTimings(
+            total_ms=total_ms,
+            query_rewrite_ms=query_rewrite_ms,
+            query_expansion_ms=query_expansion_ms,
+            retrieval_ms=retrieval_ms,
+            reranking_ms=reranking_ms,
+            parent_resolution_ms=parent_resolution_ms,
+            compression_ms=compression_ms,
+            generation_ms=generation_ms,
+        )
+
+        # Determine effective threshold and mode applied
+        effective_threshold = (
+            similarity_threshold
+            if similarity_threshold is not None
+            else getattr(self.retriever, "default_min_similarity", None)
+        )
+        effective_mode = (
+            retrieval_mode
+            if retrieval_mode is not None
+            else getattr(self.retriever, "default_retrieval_mode", "semantic")
         )
 
         return RAGResponse(
             answer=answer,
             sources=sources,
-            retrieved_chunks=retrieved_chunks,
+            retrieved_chunks=final_chunks,
             query=cleaned_question,
+            retrieval_query=retrieval_query,
+            similarity_threshold=effective_threshold,
+            document_ids=document_ids,
+            retrieval_mode=effective_mode,
+            reranking_enabled=reranking_active,
+            candidates_retrieved=candidates_retrieved,
+            query_expansion_enabled=query_expansion_enabled,
+            expanded_queries=expanded_queries,
+            parent_child_enabled=is_parent_child,
+            child_chunks_retrieved=child_chunks_retrieved,
+            parent_contexts_used=parent_contexts_used,
+            context_compression_enabled=bool(is_compression),
+            total_chars_original=total_chars_original,
+            total_chars_compressed=total_chars_compressed,
+            timings=timings,
         )

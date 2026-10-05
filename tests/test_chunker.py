@@ -174,3 +174,93 @@ def test_invalid_parameters():
 
     with pytest.raises(ValueError, match="strictly less than chunk_size"):
         TextChunker(chunk_size=500, chunk_overlap=600)
+
+
+def test_document_id_preserved():
+    """Verify document_id is preserved on DocumentChunk when provided."""
+    doc_id = "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+    page = DocumentPage(text="ContextIQ V2 multi-doc chunking test.", page_number=1, source="doc.pdf")
+    chunker = TextChunker()
+    chunks = chunker.split_page(page, document_id=doc_id)
+
+    assert len(chunks) == 1
+    assert chunks[0].document_id == doc_id
+    assert chunks[0].source == "doc.pdf"
+
+    # Also test split_pages preservation
+    pages = [
+        DocumentPage(text="Page 1 text", page_number=1, source="doc.pdf"),
+        DocumentPage(text="Page 2 text", page_number=2, source="doc.pdf"),
+    ]
+    all_chunks = chunker.split_pages(pages, document_id=doc_id)
+    assert len(all_chunks) == 2
+    assert all_chunks[0].document_id == doc_id
+    assert all_chunks[1].document_id == doc_id
+
+
+def test_v2_chunk_id_format():
+    """Verify {full_document_id}_p{page_number}_c{chunk_index} format with full SHA-256."""
+    doc_id = "a8f3b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+    chunker = TextChunker()
+
+    cid = chunker.generate_chunk_id("report.pdf", page_number=3, chunk_index=2, document_id=doc_id)
+    assert cid == f"{doc_id}_p3_c2"
+    # Ensure full 64-char hash is preserved (not truncated)
+    assert cid.startswith(doc_id)
+
+
+def test_different_documents_no_collision():
+    """Verify identical page/chunk on different document_id produce different chunk IDs."""
+    doc_id_a = "1111111111111111111111111111111111111111111111111111111111111111"
+    doc_id_b = "2222222222222222222222222222222222222222222222222222222222222222"
+    chunker = TextChunker()
+
+    cid_a = chunker.generate_chunk_id("same_name.pdf", page_number=1, chunk_index=0, document_id=doc_id_a)
+    cid_b = chunker.generate_chunk_id("same_name.pdf", page_number=1, chunk_index=0, document_id=doc_id_b)
+
+    assert cid_a != cid_b
+    assert cid_a == f"{doc_id_a}_p1_c0"
+    assert cid_b == f"{doc_id_b}_p1_c0"
+
+
+def test_same_document_deterministic():
+    """Verify identical input & document_id produces identical chunk IDs."""
+    doc_id = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    chunker = TextChunker()
+
+    cid_1 = chunker.generate_chunk_id("doc.pdf", page_number=5, chunk_index=4, document_id=doc_id)
+    cid_2 = chunker.generate_chunk_id("doc.pdf", page_number=5, chunk_index=4, document_id=doc_id)
+
+    assert cid_1 == cid_2
+
+
+def test_document_id_validation():
+    """Verify invalid document_id (empty or whitespace-only) raises ValueError."""
+    chunker = TextChunker()
+
+    with pytest.raises(ValueError, match="document_id must be a non-empty string"):
+        chunker.generate_chunk_id("doc.pdf", 1, 0, document_id="")
+
+    with pytest.raises(ValueError, match="document_id must be a non-empty string"):
+        chunker.generate_chunk_id("doc.pdf", 1, 0, document_id="   ")
+
+    with pytest.raises(ValueError, match="document_id must be a non-empty string"):
+        DocumentChunk(
+            chunk_id="chunk_1",
+            text="sample text",
+            source="doc.pdf",
+            page_number=1,
+            chunk_index=0,
+            document_id="",
+        )
+
+    with pytest.raises(ValueError, match="document_id must be a non-empty string"):
+        DocumentChunk(
+            chunk_id="chunk_1",
+            text="sample text",
+            source="doc.pdf",
+            page_number=1,
+            chunk_index=0,
+            document_id="   \t  ",
+        )
+

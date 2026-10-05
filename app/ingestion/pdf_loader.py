@@ -5,7 +5,7 @@ Extracts text and metadata page-by-page from PDFs using PyMuPDF.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 import re
 import pymupdf
 
@@ -22,6 +22,21 @@ class PDFNotFoundError(PDFLoaderError, FileNotFoundError):
 
 class InvalidPDFError(PDFLoaderError):
     """Raised when the file is not a valid or readable PDF."""
+    pass
+
+
+class EmptyPDFError(InvalidPDFError):
+    """Raised when the PDF file has 0 bytes or 0 pages."""
+    pass
+
+
+class EncryptedPDFError(InvalidPDFError):
+    """Raised when the PDF is password-protected or encrypted."""
+    pass
+
+
+class CorruptPDFError(InvalidPDFError):
+    """Raised when the PDF file is corrupted or malformed."""
     pass
 
 
@@ -58,9 +73,9 @@ class PDFLoadResult:
 class PDFLoader:
     """Loads a PDF file and extracts text page-by-page with PyMuPDF."""
 
-    def __init__(self, file_path: Union[str, Path]):
+    def __init__(self, file_path: Union[str, Path], source_name: Optional[str] = None):
         self.file_path = Path(file_path)
-        self.filename = self.file_path.name
+        self.filename = source_name if source_name else self.file_path.name
 
     @staticmethod
     def clean_text(text: str) -> str:
@@ -94,20 +109,31 @@ class PDFLoader:
             ScannedOrEmptyPDFError: If the entire document contains no extractable text.
         """
         if not self.file_path.exists():
-            raise PDFNotFoundError(f"PDF file not found: {self.file_path}")
+            raise PDFNotFoundError(f"PDF file not found: {self.filename}")
 
         if not self.file_path.is_file():
-            raise InvalidPDFError(f"Path is not a regular file: {self.file_path}")
+            raise InvalidPDFError(f"Path is not a regular file: {self.filename}")
+
+        if self.file_path.stat().st_size == 0:
+            raise EmptyPDFError(f"Failed to open PDF '{self.filename}': File is empty (0 bytes).")
 
         try:
             doc = pymupdf.open(str(self.file_path))
+        except getattr(pymupdf, "EmptyFileError", Exception) as e:
+            if "empty" in str(e).lower():
+                raise EmptyPDFError(f"Failed to open PDF '{self.filename}': File is empty (0 bytes).") from e
+            raise CorruptPDFError(f"Failed to open PDF '{self.filename}': {str(e)}") from e
         except Exception as e:
-            raise InvalidPDFError(f"Failed to open PDF '{self.filename}': {str(e)}") from e
+            raise CorruptPDFError(f"Failed to open PDF '{self.filename}': {str(e)}") from e
+
+        if getattr(doc, "is_encrypted", False) or getattr(doc, "needs_pass", False):
+            doc.close()
+            raise EncryptedPDFError(f"Failed to open PDF '{self.filename}': Document is password-protected or encrypted.")
 
         total_pages = len(doc)
         if total_pages == 0:
             doc.close()
-            raise InvalidPDFError(f"PDF '{self.filename}' has 0 pages.")
+            raise EmptyPDFError(f"Failed to open PDF '{self.filename}': Document has 0 pages.")
 
         extracted_pages: List[DocumentPage] = []
         empty_pages: List[int] = []

@@ -9,7 +9,7 @@ import pytest
 
 from app.ingestion.chunker import DocumentChunk
 from app.ingestion.embedder import GeminiEmbedder
-from app.vectorstore.chroma_store import ChromaVectorStore
+from app.retrieval.models import RetrievalResult
 from app.retrieval.retriever import (
     RetrievedChunk,
     Retriever,
@@ -17,6 +17,7 @@ from app.retrieval.retriever import (
     EmptyQueryError,
     InvalidTopKError,
 )
+from app.vectorstore.chroma_store import ChromaVectorStore
 
 FAKE_DIM = 768
 
@@ -168,9 +169,171 @@ def test_retrieval_ordering(tmp_path: Path):
     embedder.embed_query.return_value = v_query
 
     retriever = Retriever(embedder=embedder, vector_store=store)
-    results = retriever.retrieve("Unit vector query", top_k=3)
+    results = retriever.retrieve("Unit vector query", top_k=3, similarity_threshold=0.0)
 
     assert len(results) == 3
     # Nearest first: distance(c1) <= distance(c2) <= distance(c3)
     assert results[0].chunk_id == "c1"
     assert results[0].distance <= results[1].distance <= results[2].distance
+
+
+def test_results_contain_numeric_distance(mock_embedder, populated_vector_store):
+    """Test 1: Verify every returned result contains a valid float distance."""
+    retriever = Retriever(embedder=mock_embedder, vector_store=populated_vector_store)
+    results = retriever.retrieve("query", top_k=3)
+    assert len(results) == 3
+    for res in results:
+        assert isinstance(res.distance, float)
+        assert res.distance >= 0.0
+
+
+def test_results_ordered_correctly_from_mocked_distances(mock_embedder):
+    """Test 2: Given Chroma results with distances 0.10, 0.30, 0.60, verify ordering is preserved."""
+    fake_store = MagicMock(spec=ChromaVectorStore)
+    fake_store.count.return_value = 3
+    fake_store.query.return_value = {
+        "ids": [["c1", "c2", "c3"]],
+        "documents": [["doc 1", "doc 2", "doc 3"]],
+        "metadatas": [[
+            {"source": "doc.pdf", "page_number": 1, "chunk_index": 0},
+            {"source": "doc.pdf", "page_number": 1, "chunk_index": 1},
+            {"source": "doc.pdf", "page_number": 2, "chunk_index": 0},
+        ]],
+        "distances": [[0.10, 0.30, 0.60]],
+    }
+    retriever = Retriever(embedder=mock_embedder, vector_store=fake_store)
+    results = retriever.retrieve("test ordering", top_k=3, similarity_threshold=0.0)
+
+    assert len(results) == 3
+    assert [r.distance for r in results] == [0.10, 0.30, 0.60]
+    assert results[0].distance < results[1].distance < results[2].distance
+
+
+def test_top_k_limits_1_3_5(tmp_path: Path, mock_embedder):
+    """Test 3: Verify top_k=1, top_k=3, and top_k=5 limit returned result count accurately."""
+    store = ChromaVectorStore(persist_dir=tmp_path / "topk_db", collection_name="topk_coll")
+    chunks = [
+        DocumentChunk(f"c_{i}", f"Chunk text {i}", "sample.pdf", 1, i)
+        for i in range(5)
+    ]
+    embeddings = [make_vector(0.1 * (i + 1)) for i in range(5)]
+    store.add_chunks(chunks, embeddings)
+
+    retriever = Retriever(embedder=mock_embedder, vector_store=store)
+
+    assert len(retriever.retrieve("q", top_k=1)) == 1
+    assert len(retriever.retrieve("q", top_k=3)) == 3
+    assert len(retriever.retrieve("q", top_k=5)) == 5
+
+
+def test_metadata_preservation_with_document_id(tmp_path: Path, mock_embedder):
+    """Test 4: Verify result retains document_id, source, page_number, chunk_index, and distance."""
+    store = ChromaVectorStore(persist_dir=tmp_path / "meta_db", collection_name="meta_coll")
+    chunk = DocumentChunk(
+        chunk_id="att_p4_c2",
+        text="Self-attention replaces recurrent layers.",
+        source="attention.pdf",
+        page_number=4,
+        chunk_index=2,
+        document_id="sha256_hash_abcdef123456",
+    )
+    store.add_chunks([chunk], [make_vector(0.1)])
+
+    retriever = Retriever(embedder=mock_embedder, vector_store=store)
+    results = retriever.retrieve("attention mechanism", top_k=1)
+
+    assert len(results) == 1
+    res = results[0]
+    assert res.document_id == "sha256_hash_abcdef123456"
+    assert res.source == "attention.pdf"
+    assert res.page_number == 4
+    assert res.chunk_index == 2
+    assert isinstance(res.distance, float)
+    assert res.text == "Self-attention replaces recurrent layers."
+
+
+def test_same_filename_different_documents_distinguishable(mock_embedder):
+    """Test 5: Verify chunks with identical filenames but different document_ids remain distinguishable."""
+    fake_store = MagicMock(spec=ChromaVectorStore)
+    fake_store.count.return_value = 2
+    fake_store.query.return_value = {
+        "ids": [["docA_c0", "docB_c0"]],
+        "documents": [["Content from first version", "Content from second version"]],
+        "metadatas": [[
+            {"source": "report.pdf", "page_number": 1, "chunk_index": 0, "document_id": "aaa111"},
+            {"source": "report.pdf", "page_number": 1, "chunk_index": 0, "document_id": "bbb222"},
+        ]],
+        "distances": [[0.12, 0.28]],
+    }
+    retriever = Retriever(embedder=mock_embedder, vector_store=fake_store)
+    results = retriever.retrieve("report query", top_k=2)
+
+    assert len(results) == 2
+    assert results[0].source == "report.pdf"
+    assert results[1].source == "report.pdf"
+    assert results[0].document_id == "aaa111"
+    assert results[1].document_id == "bbb222"
+    assert results[0].document_id != results[1].document_id
+
+
+def test_empty_collection_returns_empty_list(mock_embedder, tmp_path: Path):
+    """Test 6: Verify retrieval returns empty list for an empty collection without calling embedder."""
+    empty_store = ChromaVectorStore(persist_dir=tmp_path / "empty_store_db", collection_name="empty_test")
+    retriever = Retriever(embedder=mock_embedder, vector_store=empty_store)
+
+    results = retriever.retrieve("Any question")
+    assert results == []
+    mock_embedder.embed_query.assert_not_called()
+
+
+def test_invalid_top_k_values(mock_embedder, populated_vector_store):
+    """Test 7: Verify top_k=0 and top_k=-1 raise InvalidTopKError."""
+    retriever = Retriever(embedder=mock_embedder, vector_store=populated_vector_store)
+
+    with pytest.raises(InvalidTopKError, match="must be a positive integer"):
+        retriever.retrieve("Valid question", top_k=0)
+
+    with pytest.raises(InvalidTopKError, match="must be a positive integer"):
+        retriever.retrieve("Valid question", top_k=-1)
+
+
+def test_distance_and_similarity_semantics():
+    """Test 8: Verify distance and cosine similarity semantics under cosine distance space."""
+    res_zero = RetrievalResult(
+        chunk_id="c0",
+        text="text",
+        source="doc.pdf",
+        page_number=1,
+        chunk_index=0,
+        distance=0.0,
+    )
+    assert res_zero.distance == 0.0
+    assert res_zero.cosine_similarity == 1.0
+    assert res_zero.similarity == 1.0
+
+    res_one = RetrievalResult(
+        chunk_id="c1",
+        text="text",
+        source="doc.pdf",
+        page_number=1,
+        chunk_index=0,
+        distance=1.0,
+    )
+    assert res_one.distance == 1.0
+    assert res_one.cosine_similarity == 0.0
+    assert res_one.similarity == 0.0
+
+    res_arbitrary = RetrievalResult(
+        chunk_id="c2",
+        text="text",
+        source="doc.pdf",
+        page_number=1,
+        chunk_index=0,
+        distance=0.1842,
+    )
+    assert res_arbitrary.distance == 0.1842
+    assert res_arbitrary.cosine_similarity == pytest.approx(1.0 - 0.1842)
+    assert res_arbitrary.similarity == pytest.approx(1.0 - 0.1842)
+    # Check RetrievedChunk is compatible
+    assert isinstance(res_arbitrary, RetrievedChunk)
+

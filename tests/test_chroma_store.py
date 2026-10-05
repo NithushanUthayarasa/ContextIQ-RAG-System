@@ -6,6 +6,7 @@ Tests use temporary local directories and fake embedding vectors to ensure fast,
 from pathlib import Path
 import pytest
 
+from typing import Optional
 from app.ingestion.chunker import DocumentChunk
 from app.vectorstore.chroma_store import (
     ChromaVectorStore,
@@ -17,13 +18,21 @@ from app.vectorstore.chroma_store import (
 FAKE_DIM = 768
 
 
-def make_chunk(cid: str, text: str, source: str = "test.pdf", page: int = 1, idx: int = 0) -> DocumentChunk:
+def make_chunk(
+    cid: str,
+    text: str,
+    source: str = "test.pdf",
+    page: int = 1,
+    idx: int = 0,
+    document_id: Optional[str] = None,
+) -> DocumentChunk:
     return DocumentChunk(
         chunk_id=cid,
         text=text,
         source=source,
         page_number=page,
         chunk_index=idx,
+        document_id=document_id,
     )
 
 
@@ -176,3 +185,141 @@ def test_non_numeric_embedding_validation(tmp_path: Path):
 
     with pytest.raises(InvalidEmbeddingError, match="contains non-numeric values"):
         store.add_chunks([chunk], [["not", "a", "number"]])
+
+
+def test_document_id_metadata_storage(tmp_path: Path):
+    """Test 1: Verify document_id is accurately saved into ChromaDB metadata."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    doc_id_1 = "hash_doc_1"
+    doc_id_2 = "hash_doc_2"
+
+    chunks = [
+        make_chunk("c1", "text 1", source="doc1.pdf", page=1, idx=0, document_id=doc_id_1),
+        make_chunk("c2", "text 2", source="doc2.pdf", page=2, idx=0, document_id=doc_id_2),
+    ]
+    store.add_chunks(chunks, [make_vector(0.1), make_vector(0.2)])
+
+    res1 = store.get(ids=["c1"])
+    assert res1["metadatas"][0]["document_id"] == doc_id_1
+    assert res1["metadatas"][0]["source"] == "doc1.pdf"
+
+    res2 = store.get(ids=["c2"])
+    assert res2["metadatas"][0]["document_id"] == doc_id_2
+    assert res2["metadatas"][0]["source"] == "doc2.pdf"
+
+
+def test_has_document(tmp_path: Path):
+    """Test 2: Verify has_document returns True for existing docs and False for unknown/invalid docs."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    doc_id = "target_doc_sha256"
+    chunks = [make_chunk("c1", "hello world", document_id=doc_id)]
+    store.add_chunks(chunks, [make_vector(0.1)])
+
+    assert store.has_document(doc_id) is True
+    assert store.has_document("non_existent_hash") is False
+    assert store.has_document("") is False
+    assert store.has_document("   ") is False
+
+
+def test_delete_by_document_id(tmp_path: Path):
+    """Test 3: Verify delete_by_document_id deletes all chunks for target document while leaving others untouched."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    doc_a = "doc_a_hash"
+    doc_b = "doc_b_hash"
+
+    chunks = [
+        make_chunk("a1", "A chunk 1", document_id=doc_a),
+        make_chunk("a2", "A chunk 2", document_id=doc_a),
+        make_chunk("a3", "A chunk 3", document_id=doc_a),
+        make_chunk("b1", "B chunk 1", document_id=doc_b),
+        make_chunk("b2", "B chunk 2", document_id=doc_b),
+    ]
+    store.add_chunks(chunks, [make_vector(0.1)] * 5)
+    assert store.count() == 5
+
+    # Delete doc A
+    deleted_count = store.delete_by_document_id(doc_a)
+    assert deleted_count == 3
+    assert store.count() == 2
+    assert store.has_document(doc_a) is False
+    assert store.has_document(doc_b) is True
+
+    # Remaining chunks must belong only to doc B
+    remaining = store.get()
+    assert set(remaining["ids"]) == {"b1", "b2"}
+    for meta in remaining["metadatas"]:
+        assert meta["document_id"] == doc_b
+
+    # Deleting non-existent document returns 0
+    assert store.delete_by_document_id("unknown_doc") == 0
+
+
+def test_same_filename_different_document_ids(tmp_path: Path):
+    """Test 4: Verify two documents with the same filename but different document_ids coexist independently."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    doc_v1 = "hash_report_version1"
+    doc_v2 = "hash_report_version2"
+
+    chunks = [
+        make_chunk("v1_c0", "Version 1 chunk", source="report.pdf", page=1, idx=0, document_id=doc_v1),
+        make_chunk("v2_c0", "Version 2 chunk", source="report.pdf", page=1, idx=0, document_id=doc_v2),
+    ]
+    store.add_chunks(chunks, [make_vector(0.1), make_vector(0.2)])
+    assert store.count() == 2
+
+    docs = store.list_indexed_documents()
+    assert len(docs) == 2
+    ids = {d["document_id"] for d in docs}
+    assert ids == {doc_v1, doc_v2}
+    for d in docs:
+        assert d["source"] == "report.pdf"
+
+
+def test_list_indexed_documents_aggregation(tmp_path: Path):
+    """Test 5: Verify list_indexed_documents correctly computes page_count, chunk_count, and preserves source & document_id."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    doc_id = "doc_multi_page_hash"
+
+    # 4 chunks across 2 distinct pages (pages 1 and 2)
+    chunks = [
+        make_chunk("c1", "p1 c0", source="paper.pdf", page=1, idx=0, document_id=doc_id),
+        make_chunk("c2", "p1 c1", source="paper.pdf", page=1, idx=1, document_id=doc_id),
+        make_chunk("c3", "p2 c0", source="paper.pdf", page=2, idx=0, document_id=doc_id),
+        make_chunk("c4", "p2 c1", source="paper.pdf", page=2, idx=1, document_id=doc_id),
+    ]
+    store.add_chunks(chunks, [make_vector(0.1)] * 4)
+
+    docs = store.list_indexed_documents()
+    assert len(docs) == 1
+    doc_info = docs[0]
+    assert doc_info["document_id"] == doc_id
+    assert doc_info["source"] == "paper.pdf"
+    assert doc_info["page_count"] == 2
+    assert doc_info["chunk_count"] == 4
+
+
+def test_same_content_identity_upsert_no_duplicates(tmp_path: Path):
+    """Test 6: Verify re-inserting same document_id with same chunk IDs updates without creating duplicate records."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    doc_id = "deterministic_doc_hash"
+    chunk_1 = make_chunk(f"{doc_id}_p1_c0", "Initial text", source="doc.pdf", page=1, idx=0, document_id=doc_id)
+    store.add_chunks([chunk_1], [make_vector(0.1)])
+    assert store.count() == 1
+
+    # Re-insert with same chunk ID
+    chunk_1_updated = make_chunk(f"{doc_id}_p1_c0", "Updated text", source="doc.pdf", page=1, idx=0, document_id=doc_id)
+    store.add_chunks([chunk_1_updated], [make_vector(0.2)])
+
+    assert store.count() == 1
+    docs = store.list_indexed_documents()
+    assert len(docs) == 1
+    assert docs[0]["chunk_count"] == 1
+    res = store.get(ids=[f"{doc_id}_p1_c0"])
+    assert res["documents"][0] == "Updated text"
+
+
+def test_list_indexed_documents_empty_collection(tmp_path: Path):
+    """Test 7: Verify list_indexed_documents returns an empty list cleanly when store is empty."""
+    store = ChromaVectorStore(persist_dir=tmp_path)
+    assert store.list_indexed_documents() == []
+
