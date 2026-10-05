@@ -99,3 +99,34 @@ def test_clean_import_without_api_key():
         assert app.main is not None
         assert app.ui.components is not None
         assert app.ui.eval_dashboard is not None
+
+
+def test_app_main_resolves_when_sys_path_only_contains_app_dir():
+    """
+    Simulate Streamlit Community Cloud execution where sys.path[0] is the script's
+    parent directory ('app') and the repository root is NOT originally on sys.path.
+    Verifies that app/main.py self-heals sys.path so 'import app...' succeeds.
+    """
+    import subprocess
+    import sys
+
+    code = """
+import sys, runpy
+from pathlib import Path
+
+app_dir = str(Path('.').resolve() / 'app')
+sys.path = [p for p in sys.path if Path(p).resolve() != Path('.').resolve()]
+sys.path.insert(0, app_dir)
+
+mod = runpy.run_path('app/main.py')
+assert 'main' in mod, 'main function not found in app/main.py'
+print('OK')
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(BASE_DIR),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Failed Streamlit Cloud simulation: {result.stderr}"
+    assert "OK" in result.stdout

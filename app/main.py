@@ -4,12 +4,18 @@ Main Streamlit Application Entrypoint
 """
 
 import hashlib
-import uuid
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-import streamlit as st
-
 import logging
+from pathlib import Path
+import sys
+from typing import Any, Dict, List, Optional
+import uuid
+
+# Ensure repository root is on sys.path when executed directly as Streamlit entrypoint
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+import streamlit as st
 
 from app.config import (
     CONTEXT_COMPRESSION_ENABLED,
